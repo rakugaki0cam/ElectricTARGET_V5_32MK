@@ -42,7 +42,7 @@
  * 2024.02.25   v.0.51  有線部分の作成:
  *                      ブランチv051-wired-connect
  * 2024.02.25   v.0.52  有線接続の時、ターゲットオフセット分をタマモニへのデータに加算しなくてはいけない。(オフセットデータを持っていない)
- *                      有線接続の時、タマモニからのターゲットコマンド(UART)を解釈してESPへI2Cで送る
+ *                      有線接続の時、タマモニからのターゲットコマンド(UART)を解釈してESPへI2Cコマンドで送る
  * 
  * 
  */
@@ -349,16 +349,8 @@ void debuggerComand(void){
         ESP32slave_ClearCommand();
     }else{
         //コマンド解析
-        
-        
         tamamoniCommandCheck(buf);
 
-        
-        
-        
-        
-        
-        
         //printf(">invalid command!\n");
     }
     
@@ -381,7 +373,7 @@ void tamamoniCommandCheck(uint8_t* tmp_str) {
     const char defaultSet[] = "DEFAULT";
     const char offset[] = "OFFSET";
     const char aimpoint[] = "AIMPOINT";
-    const char brightness[] = "BRIGHT";
+    const char brightness[] = "BRIGHTNESS";
     float val = 0;
     uint8_t   num;
 
@@ -393,34 +385,27 @@ void tamamoniCommandCheck(uint8_t* tmp_str) {
     }                                                                     
     //コマンド
     printf("Detect tamamoni command(%d) :%s   %f --- ", num, command, val);
+    
     if (strcmp(clear, command) == 0) {
-        printf("> target clear\n");
         ESP32slave_ClearCommand();
 
     } else if (strcmp(reset, command) == 0) {
-        printf("** RESET ESP32 in 3 second **\n");
-        //LCD
-        CORETIMER_DelayMs(3000);
-        ESP32slave_ResetCommand();  ////////////////////// RESET
+        ESP32slave_ResetCommand();
 
     } else if (strcmp(defaultSet, command) == 0) {
-        printf("> target default set \n");
         ESP32slave_DefaultSetCommand();
 
     } else if (strcmp(offset, command) == 0) {
-        printf("> target Y offset %5.1f \n", val);
         ESP32slave_OffSetCommand(val);
 
     } else if (strcmp(aimpoint, command) == 0) {
-        printf("> aimpoint set %5.1f \n", val);
         ESP32slave_AimpointCommand(val);
 
     } else if (strcmp(brightness, command) == 0) {
-        printf("> LCD backlight brightness set %5.1f \n", val);
         ESP32slave_BrightnessCommand(val);
     } else {
         //
-        printf(" invalid command!\n");
+        printf("> invalid command!\n");
     }
 
 }

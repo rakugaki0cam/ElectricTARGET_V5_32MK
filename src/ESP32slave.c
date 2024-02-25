@@ -166,7 +166,7 @@ bool ESP32slave_SleepCommand(void){
 
 bool ESP32slave_ClearCommand(void){  
     //ESP32へターゲットクリア
-
+    printf("> target clear\n");
     if (i2c1_Write1byteRegister(ESP_SLAVE_ID, REG_TARGET_CLEAR, 0)){
 #ifdef DEBUG_ESP_SLAVE_0
         printf("ESPslave error!\n");
@@ -179,7 +179,9 @@ bool ESP32slave_ClearCommand(void){
 
 bool ESP32slave_ResetCommand(void){  
     //ESP32へターゲットリセット
-
+    printf("** RESET ESP32 in 3 second **\n");
+    CORETIMER_DelayMs(3000);
+    
     if (i2c1_Write1byteRegister(ESP_SLAVE_ID, REG_TARGET_RESET, 0)){
 #ifdef DEBUG_ESP_SLAVE_0
         printf("ESPslave error!\n");
@@ -192,7 +194,7 @@ bool ESP32slave_ResetCommand(void){
 
 bool ESP32slave_DefaultSetCommand(void){  
     //ESP32へターゲットデフォルトセッティング
-
+    printf("> target default set \n");
     if (i2c1_Write1byteRegister(ESP_SLAVE_ID, REG_TARGET_DEFAULT, 0)){
 #ifdef DEBUG_ESP_SLAVE_0
         printf("ESPslave error!\n");
@@ -203,13 +205,18 @@ bool ESP32slave_DefaultSetCommand(void){
 }
 
 
-
 bool ESP32slave_OffSetCommand(float offSet){  
     //ESP32へオフセットコマンド
+    uint8_t val;
+    
     if ((offSet < -40) || (offSet > 35)){
+        printf("error (-40~35) \n");
         return ERROR;
     }
-    if (i2c1_Write1byteRegister(ESP_SLAVE_ID, REG_TARGET_OFFSET, offSet)){
+    //1バイト数値に変換
+    val = (uint8_t)(offSet + 128);
+    printf("> target Y offset %4d \n", val - 128);
+    if (i2c1_Write1byteRegister(ESP_SLAVE_ID, REG_TARGET_OFFSET, val)){
 #ifdef DEBUG_ESP_SLAVE_0
         printf("ESPslave error!\n");
 #endif
@@ -222,9 +229,12 @@ bool ESP32slave_OffSetCommand(float offSet){
 bool ESP32slave_AimpointCommand(float aimPoint){  
     //ESP32へ狙点セットコマンド
     if ((aimPoint < 30) || (aimPoint > 120)){
+        printf("error (30~120) \n");
         return ERROR;
     }
-    if (i2c1_Write1byteRegister(ESP_SLAVE_ID, REG_TARGET_AIMPOINT, aimPoint)){
+    //1バイト数値に変換
+    printf("> aimpoint set %3.0f \n", aimPoint);
+    if (i2c1_Write1byteRegister(ESP_SLAVE_ID, REG_TARGET_AIMPOINT, (uint8_t)aimPoint)){
 #ifdef DEBUG_ESP_SLAVE_0
         printf("ESPslave error!\n");
 #endif
@@ -238,9 +248,11 @@ bool ESP32slave_AimpointCommand(float aimPoint){
 bool ESP32slave_BrightnessCommand(float brightness){  
     //ESP32へ輝度セットコマンド
     if ((brightness < 0) || (brightness > 250)){
+        printf("error (0~250) \n");
         return ERROR;
     }
-     if (i2c1_Write1byteRegister(ESP_SLAVE_ID, REG_TARGET_BRIGHT, brightness)){
+    printf("> LCD backlight brightness set %3.0f \n", brightness);
+    if (i2c1_Write1byteRegister(ESP_SLAVE_ID, REG_TARGET_BRIGHT, (uint8_t)brightness)){
 #ifdef DEBUG_ESP_SLAVE_0
         printf("ESPslave error!\n");
 #endif
