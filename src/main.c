@@ -42,7 +42,9 @@
  * 2024.02.25   v.0.51  有線部分の作成:
  *                      ブランチv051-wired-connect
  * 2024.02.25   v.0.52  有線接続の時、ターゲットオフセット分をタマモニへのデータに加算しなくてはいけない。(オフセットデータを持っていない)
- *                      有線接続の時、タマモニからのターゲットコマンド(UART)を解釈してESPへI2Cコマンドで送る
+ *                      有線接続の時、タマモニからのターゲットコマンド(UART)を解釈してESPへI2Cコマンドで送る。
+ *                      通信不良はタマモニのエラッタのせいだった。対策の配線が間違っていた。
+ * 
  * 
  * 
  */
@@ -373,7 +375,7 @@ void tamamoniCommandCheck(uint8_t* tmp_str) {
     const char defaultSet[] = "DEFAULT";
     const char offset[] = "OFFSET";
     const char aimpoint[] = "AIMPOINT";
-    const char brightness[] = "BRIGHTNESS";
+    const char brightness[] = "BRIGHT";
     float val = 0;
     uint8_t   num;
 
@@ -384,7 +386,7 @@ void tamamoniCommandCheck(uint8_t* tmp_str) {
         return;
     }                                                                     
     //コマンド
-    printf("Detect tamamoni command(%d) :%s   %f --- ", num, command, val);
+    printf("Detect TamaMoni command(%d) :%s   %f --- ", num, command, val);
     
     if (strcmp(clear, command) == 0) {
         ESP32slave_ClearCommand();
