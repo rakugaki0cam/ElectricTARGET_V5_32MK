@@ -17,7 +17,8 @@
  * 
  * DEBUGGer: 9600bps　-> 115200bps (2024.01.17 ~)
  * タマモニ有線のため　また9600bpsへ (2024.02.25 ~)
- * 
+ *                 また -> 115200bpsに (2024.02.28 ~)
+ *
  * 
  * Main.c
  * 
@@ -44,7 +45,7 @@
  * 2024.02.25   v.0.52  有線接続の時、ターゲットオフセット分をタマモニへのデータに加算しなくてはいけない。(オフセットデータを持っていない)
  *                      有線接続の時、タマモニからのターゲットコマンド(UART)を解釈してESPへI2Cコマンドで送る。
  *                      通信不良はタマモニのエラッタのせいだった。対策の配線が間違っていた。
- * 
+ * 2024.02.28   v.0.53  タマモニ有線接続&DEBUGger 　　9600bps -> 115200bps
  * 
  * 
  */
@@ -63,11 +64,11 @@ debugger_mode_sour_t  debuggerMode = NONE;
 
 
 //local
-const uint8_t fw_ver[] = "0.52";    //firmware version
+const uint8_t fw_ver[] = "0.53";    //firmware version
 bool        mainSwFlag = 0;         //メインスイッチ割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
-uint32_t    uartBaudrate = 9600;    //RS485ボーレート:通常　(タマモニ有線可)
-//uint32_t    uartBaudrate = 115200;  //              :たくさんデバッグする時(タマモニ有線不可)
+//uint32_t    uartBaudrate = 9600;    //RS485ボーレート
+uint32_t    uartBaudrate = 115200;
 
 
 //--- callback ----------------------------------------------------------
@@ -89,11 +90,11 @@ void timer1sec_callback(uintptr_t context){
 
 int main ( void ){
     uint8_t cnt;
-    meas_stat_sor_t measStat;
-    uint16_t        shotCnt = 0;     //ショットカウントは1から。0は入力無し
-    uint8_t         dispTimer = 0;
-    uint8_t         ledTimer = 0;       //ステータスLEDを消すまでのタイマー
-    //UART_SERIAL_SETUP rs485set;
+    meas_stat_sor_t     measStat;
+    uint16_t            shotCnt = 0;        //ショットカウントは1から。0は入力無し
+    uint8_t             dispTimer = 0;
+    uint8_t             ledTimer = 0;       //ステータスLEDを消すまでのタイマー
+    UART_SERIAL_SETUP   rs485set;
 
     
     //Initialize all modules
@@ -104,11 +105,11 @@ int main ( void ){
     ANALOG_POWER_Set();     //Analog 3.3V LDO
     
     //UART
-    //rs485set.baudRate = uartBaudrate;
-    //rs485set.parity = UART_PARITY_NONE;
-    //rs485set.dataWidth = UART_DATA_8_BIT;
-    //rs485set.stopBits = UART_STOP_1_BIT;
-    //UART1_SerialSetup(&rs485set, CPU_CLOCK_FREQUENCY >> 1);  //PBCLK2:60MHz
+    rs485set.baudRate = uartBaudrate;
+    rs485set.parity = UART_PARITY_NONE;
+    rs485set.dataWidth = UART_DATA_8_BIT;
+    rs485set.stopBits = UART_STOP_1_BIT;
+    UART1_SerialSetup(&rs485set, CPU_CLOCK_FREQUENCY >> 1);  //PBCLK2:60MHz
     
     //start up
     CORETIMER_DelayMs(1000);
