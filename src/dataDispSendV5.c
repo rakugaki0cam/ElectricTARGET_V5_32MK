@@ -182,8 +182,8 @@ void printFullDebug(uint16_t shotCount, meas_stat_sor_t measStat){
     //デバッグ用フル表示
     
     uint8_t             i;
-    uint8_t             selGroup;   //ばらつきが最小のグループの番号
-    float               stdDev;     //標準偏差
+    uint8_t             selGroup = 0;   //ばらつきが最小のグループの番号
+    float               stdDev = 0;     //標準偏差
     
     printf("\n");
     printf("--- SHOT #%d --------------------------------------------------------------------------------------------------------------------\n", shotCount);
@@ -223,7 +223,8 @@ void printFullDebug(uint16_t shotCount, meas_stat_sor_t measStat){
             stdDev = sqrt(vari5Groupe[i].variance);
         }
     }
-    printf("--- Result: [ Group: %1d (exclude sensor%1d): stdev: %6.3fmm ] -------------------------------\n", (selGroup + 1), (selGroup + 1), stdDev);
+    selGroup++;
+    printf("--- Result: [ Group: %1d (exclude sensor%1d): stdev: %6.3fmm ] -------------------------------\n", selGroup, selGroup, stdDev);
     printf("\n\n");
 
 }

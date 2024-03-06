@@ -188,7 +188,7 @@ uint8_t assignMeasureData(void){
     //出力: 有効測定センサー数
     meas_stat_sor_t   sensorStat = SENSOR_STATUS_OK;
     uint8_t     SensNum;                //センサ番号 0-4
-    uint8_t     firstSensor;            //最初にオンしたセンサーの番号
+    uint8_t     firstSensor = 0;        //最初にオンしたセンサーの番号
     uint8_t     validSensorCount = 0;   //有効測定センサー数のカウント
     
     for (SensNum = 0; SensNum < NUM_SENSOR; SensNum++){
