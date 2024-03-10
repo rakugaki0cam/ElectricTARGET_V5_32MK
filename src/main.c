@@ -46,6 +46,9 @@
  *                      有線接続の時、タマモニからのターゲットコマンド(UART)を解釈してESPへI2Cコマンドで送る。
  *                      通信不良はタマモニのエラッタのせいだった。対策の配線が間違っていた。
  * 2024.02.28   v.0.53  タマモニ有線接続&DEBUGger 　　9600bps -> 115200bps
+ * 2024.03.10   v.0.55  PT1_ESP (センサ1 ESP-NOW無線より) --> EXT2/PT1_ESP
+ *                      VideoSYNC --> CLC2 CLC3ENで　有線と無線(OCMP PWM)切り替え  
+ *  
  * 
  * 
  */
@@ -64,7 +67,7 @@ debugger_mode_sour_t  debuggerMode = NONE;
 
 
 //local
-const uint8_t fw_ver[] = "0.53";    //firmware version
+const uint8_t fw_ver[] = "0.55";    //firmware version
 bool        mainSwFlag = 0;         //メインスイッチ割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
 //uint32_t    uartBaudrate = 9600;    //RS485ボーレート

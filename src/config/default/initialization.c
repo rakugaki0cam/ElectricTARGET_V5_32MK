@@ -194,23 +194,31 @@ void SYS_Initialize ( void* data )
 
     ICAP1_Initialize();
 
-    CLC1_Initialize();
-	CMP_Initialize();
+    OCMP1_Initialize();
 
     CORETIMER_Initialize();
-    I2C1_Initialize();
-
-    I2C2_Initialize();
-
     ADCHS_Initialize();
 
 	UART1_Initialize();
+
+    TMR4_Initialize();
+
+    TMR5_Initialize();
 
     TMR2_Initialize();
 
     TMR3_Initialize();
 
     CDAC2_Initialize();
+
+    CLC3_Initialize();
+	CMP_Initialize();
+
+    CLC1_Initialize();
+    CLC2_Initialize();
+    I2C1_Initialize();
+
+    I2C2_Initialize();
 
     RTCC_Initialize();
 

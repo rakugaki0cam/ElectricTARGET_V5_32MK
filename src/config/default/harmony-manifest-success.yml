@@ -4,7 +4,7 @@
 
 
 project: ElectricTARGET_2
-creation_date: 2024-02-26T22:14:21.470+09:00[Asia/Tokyo]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
+creation_date: 2024-03-10T20:26:59.875+09:00[Asia/Tokyo]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
 operating_system: Mac OS X
 mcc_mode: IDE            # [IDE|Standalone|Headless]
 mcc_version: v5.5.0
@@ -15,7 +15,7 @@ compiler: XC32 4.35
 
 modules:
     - {name: "csp", version: "v3.18.2"}
-    - {name: "core", version: "v3.13.1"}
+    - {name: "core", version: "v3.13.3"}
 
 packs:
     - {name: "PIC32MK-MC_DFP", version: "1.11.151"}

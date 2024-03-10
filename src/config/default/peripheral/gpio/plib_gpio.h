@@ -97,6 +97,27 @@
 #define PT1_Get()               ((PORTG >> 7) & 0x1U)
 #define PT1_PIN                  GPIO_PIN_RG7
 
+/*** Macros for PT1_ESP pin ***/
+#define PT1_ESP_Get()               ((PORTG >> 8) & 0x1U)
+#define PT1_ESP_PIN                  GPIO_PIN_RG8
+
+/*** Macros for AUX1 pin ***/
+#define AUX1_Set()               (LATGSET = (1U<<9))
+#define AUX1_Clear()             (LATGCLR = (1U<<9))
+#define AUX1_Toggle()            (LATGINV= (1U<<9))
+#define AUX1_OutputEnable()      (TRISGCLR = (1U<<9))
+#define AUX1_InputEnable()       (TRISGSET = (1U<<9))
+#define AUX1_Get()               ((PORTG >> 9) & 0x1U)
+#define AUX1_PIN                  GPIO_PIN_RG9
+
+/*** Macros for VIDEO_SYNC_IN pin ***/
+#define VIDEO_SYNC_IN_Get()               ((PORTA >> 12) & 0x1U)
+#define VIDEO_SYNC_IN_PIN                  GPIO_PIN_RA12
+
+/*** Macros for VIDEO_SYNC_OUT pin ***/
+#define VIDEO_SYNC_OUT_Get()               ((PORTA >> 11) & 0x1U)
+#define VIDEO_SYNC_OUT_PIN                  GPIO_PIN_RA11
+
 /*** Macros for U1TXDE pin ***/
 #define U1TXDE_Get()               ((PORTE >> 1) & 0x1U)
 #define U1TXDE_PIN                  GPIO_PIN_RE1
