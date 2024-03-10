@@ -78,8 +78,7 @@ void GPIO_Initialize ( void )
     CNPUFSET = 0x3U; /* Pull-Up Enable */
     /* PORTG Initialization */
     ANSELGCLR = 0x380U; /* Digital Mode Enable */
-    CNPUGSET = 0x80U; /* Pull-Up Enable */
-    CNPDGSET = 0x200U; /* Pull-Down Enable */
+    CNPDGSET = 0x280U; /* Pull-Down Enable */
 
     /* Unlock system for PPS configuration */
     SYSKEY = 0x00000000U;
@@ -98,6 +97,7 @@ void GPIO_Initialize ( void )
     INT4R = 3;
     INT2R = 10;
     CLCINAR = 8;
+    INT3R = 10;
 
     /* PPS Output Remapping */
     RPF1R = 1;

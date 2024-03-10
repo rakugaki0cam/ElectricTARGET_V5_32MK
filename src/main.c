@@ -107,6 +107,23 @@ int main ( void ){
     ESP_POWER_Set();        //ESP32 5V LoadSwitch
     ANALOG_POWER_Set();     //Analog 3.3V LDO
     
+    //Pin Interrupt
+    ICAP1_CallbackRegister(detectSensor1, 0);
+    ICAP2_CallbackRegister(detectSensor2, 0);
+    ICAP3_CallbackRegister(detectSensor3, 0);
+    ICAP4_CallbackRegister(detectSensor4, 0);
+    ICAP5_CallbackRegister(detectSensor5, 0);
+
+     //Main SW interrupt INT4
+    EVIC_ExternalInterruptCallbackRegister(EXTERNAL_INT_4, mainSwOn_callback, 0);
+    EVIC_ExternalInterruptEnable(EXTERNAL_INT_4);
+    
+    //RTCC1秒ごと割込
+    RTCC_CallbackRegister(timer1sec_callback, 0);
+    
+    //I2C Init
+    I2C1_CallbackRegister(MyI2CCallback, 0);    //NULL);
+    
     //UART
     rs485set.baudRate = uartBaudrate;
     rs485set.parity = UART_PARITY_NONE;
@@ -114,6 +131,11 @@ int main ( void ){
     rs485set.stopBits = UART_STOP_1_BIT;
     UART1_SerialSetup(&rs485set, CPU_CLOCK_FREQUENCY >> 1);  //PBCLK2:60MHz
     
+    //video SYNC LED(Blue)              ///////サブ化する//////////////////////////
+#define WIRED_LAN       1   //LANケーブル有線接続
+#define WIFI_ESP_NOW    0   //ESP-NOW無線接続
+    CLC3_Enable(WIRED_LAN);
+            
     //start up
     CORETIMER_DelayMs(1000);
     LED_BLUE_Clear();
@@ -137,23 +159,6 @@ int main ( void ){
     printf("target clear ... C\n");
     printf("--- INIT -----------\n");
 
-    //Pin Interrupt
-    ICAP1_CallbackRegister(detectSensor1, 0);
-    ICAP2_CallbackRegister(detectSensor2, 0);
-    ICAP3_CallbackRegister(detectSensor3, 0);
-    ICAP4_CallbackRegister(detectSensor4, 0);
-    ICAP5_CallbackRegister(detectSensor5, 0);
-
-     //Main SW interrupt INT4
-    EVIC_ExternalInterruptCallbackRegister(EXTERNAL_INT_4, mainSwOn_callback, 0);
-    EVIC_ExternalInterruptEnable(EXTERNAL_INT_4);
-    
-    //RTCC1秒ごと割込
-    RTCC_CallbackRegister(timer1sec_callback, 0);
-    
-    //I2C Init
-    I2C1_CallbackRegister(MyI2CCallback, 0);    //NULL);
-    
     //I2Cセンサ類初期設定
     ip5306_Init();      //Li-ion Battery charger&booster
     BME280_Init();      //BMP280 temp&pressure

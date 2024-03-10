@@ -212,9 +212,9 @@ void SYS_Initialize ( void* data )
     CDAC2_Initialize();
 
     CLC3_Initialize();
+    CLC1_Initialize();
 	CMP_Initialize();
 
-    CLC1_Initialize();
     CLC2_Initialize();
     I2C1_Initialize();
 
