@@ -82,7 +82,8 @@ void pt1Esp_callback(EXTERNAL_INT_PIN, uintptr_t);
 void pt1Lan_callback(EXTERNAL_INT_PIN, uintptr_t);
 void timer1sec_callback(uintptr_t);
 //sub
-void debuggerComand(void);
+void uartComandCheck(void);
+void debuggerComand(uint8_t*);
 void tamamoniCommandCheck(uint8_t*); 
 
 

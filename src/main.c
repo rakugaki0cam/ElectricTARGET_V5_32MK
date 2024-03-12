@@ -48,12 +48,23 @@
  * 2024.02.28   v.0.53  タマモニ有線接続&DEBUGger 　　9600bps -> 115200bps
  * 2024.03.10   v.0.55  PT1_ESP (センサ1 ESP-NOW無線より) --> EXT2/PT1_ESP
  *                      VideoSYNC --> CLC2 CLC3ENで　有線と無線(OCMP PWM)切り替え  
- *  
+ * 2024.03.12   v.0.56  pt1 無線の時の遅れ時間測定 PT1_DELAY_TEST
  * 
  * 
  */
 
 #include "header.h"
+
+
+//video SYNC LED (Blue)
+#define videoSyncStart()    TMR4_Start()    //OCMP(PWM)start
+#define PT1_LAN     0                       //LANケーブル有線接続
+#define SyncLAN8()  CLC3_Enable(PT1_LAN)    //CLC2INA(LAN.8) --> videoSYNC
+#define PT1_WIFI    1                       //ESP-NOW無線接続
+#define SyncPWM()   CLC3_Enable(PT1_WIFI)   //OCMP1(PWM) --> videoSYNC
+
+//PT1 delay TEST
+#define PT1_DELAY_TEST//_no              //PT1無線の遅れ時間測定テスト
 
 
 //Global
@@ -67,14 +78,19 @@ debugger_mode_sour_t  debuggerMode = NONE;
 
 
 //local
-const uint8_t fw_ver[] = "0.55";    //firmware version
+const uint8_t fw_ver[] = "0.56";    //firmware version
 bool        mainSwFlag = 0;         //メインスイッチ割込
 bool        pt1Esp_Flag = 0;        //PT1(無線)割込
 bool        pt1_Flag = 0;           //PT1(有線)割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
+bool        pt1Connect = 0;         //PT1..0:有線接続, 1:無線接続
 //uint32_t    uartBaudrate = 9600;    //RS485ボーレート
 uint32_t    uartBaudrate = 115200;
 
+#ifdef  PT1_DELAY_TEST
+uint32_t    pt1TimerStart = 0;      //PT1ディレイ測定タイマー
+uint32_t    pt1TimerEnd = 0;
+#endif
 
 //--- callback ----------------------------------------------------------
 
@@ -84,14 +100,21 @@ void mainSwOn_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
 
 void pt1Esp_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
     pt1Esp_Flag = 1;
-    if (wifiコネクト){
+    if (pt1Connect == 1){
         //無線の時
-        TMR4_Start();   //PWMスタート
+        videoSyncStart();   //PWMスタート
+#ifdef PT1_DELAY_TEST
+        pt1TimerEnd = TMR2;
+#endif
     }
+    
 }
 
 void pt1Lan_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
     pt1_Flag = 1;
+#ifdef PT1_DELAY_TEST
+        pt1TimerStart = TMR2;
+#endif    
 }
 
 
@@ -109,7 +132,6 @@ int main ( void ){
     uint8_t             dispTimer = 0;
     uint8_t             ledTimer = 0;       //ステータスLEDを消すまでのタイマー
     uint8_t             pt1Timer = 0;       //有線接続チェックタイマー
-    bool                pt1Wifi = 0;        //PT1..0:有線接続, 1:無線接続
     UART_SERIAL_SETUP   rs485set;
 
     
@@ -150,10 +172,8 @@ int main ( void ){
     rs485set.stopBits = UART_STOP_1_BIT;
     UART1_SerialSetup(&rs485set, CPU_CLOCK_FREQUENCY >> 1);  //PBCLK2:60MHz
     
-    //video SYNC LED(Blue)              ///////サブ化する//////////////////////////
-#define WIRED_LAN       1   //LANケーブル有線接続
-#define WIFI_ESP_NOW    0   //ESP-NOW無線接続
-    CLC3_Enable(WIRED_LAN);
+    //video SYNC LED(Blue)
+    SyncLAN8();
             
     //start up
     CORETIMER_DelayMs(1000);
@@ -259,13 +279,15 @@ int main ( void ){
             //CORETIMER_DelayMs(100);     //printf表示処理が残っていて再トリガしてしまうので待つ////////////フルオート対応できない//////////////////////
             clearData();
             ledTimer = 0;
+            pt1_Flag = 0;
+            pt1Esp_Flag = 0;
             
             LED_BLUE_Clear();
             
         }else{       
             //(sensorCnt == 0)測定中ではない時
             
-            debuggerComand();
+            uartComandCheck();
             
             //
             if (timer1secFlag ){
@@ -296,9 +318,12 @@ int main ( void ){
                     //PT1...LAN or WiFi
                     if (PT1_Get()){
                         //無線
-                        pt1Wifi = 0;
+                        pt1Connect = PT1_LAN;
+                        SyncLAN8();   //CLC3EN - CLC2INA(LAN.8) --> videoSYNC
                     }else{
-                        pt1Wifi = 1;
+                        //有線
+                        pt1Connect = PT1_WIFI;
+                        SyncPWM();    //OCMP1(PWM) --> videoSYNC)
                     }
                 }
             }
@@ -309,6 +334,11 @@ int main ( void ){
                 mainSwPush();
                 mainSwFlag = 0;
             }
+#ifdef PT1_DELAY_TEST
+            if ((pt1_Flag == 1) && (pt1Esp_Flag == 1)){
+                printf("PT1 ESP-NOW delay %6dusec\n", (pt1TimerEnd - pt1TimerStart) * 1000000 / TMR2_FrequencyGet());
+            }
+#endif    
         }
   
     }
@@ -321,7 +351,7 @@ int main ( void ){
 
 //----- sub --------------------------------------------------------------------
 
-void debuggerComand(void){
+void uartComandCheck(void){
     //キー入力で表示モードを切り替え
 #define     BUF_NUM     250     //UARTデータ読込バッファ数
     uint8_t buf[BUF_NUM];       //UARTデータ読込バッファ
@@ -357,7 +387,19 @@ void debuggerComand(void){
         }
     }
     
+    debuggerComand(buf);
+    tamamoniCommandCheck(buf);
     
+    UART1_ErrorGet();
+    //buffer clear
+    for(i = 0; i < BUF_NUM; i++){
+        buf[i] = 0;
+    }
+    
+}
+    
+    
+void debuggerComand(uint8_t* buf){
     //DEBUGger出力モードの切り替え
     if (((buf[0] == 'R') | (buf[0] == 'r')) && ((buf[1] + buf[2] + buf[3] + buf[4]) == 0)){
         switch(debuggerMode){
@@ -390,18 +432,6 @@ void debuggerComand(void){
         //ターゲットクリア
         printf(">target clear\n");
         ESP32slave_ClearCommand();
-    }else{
-        //コマンド解析
-        tamamoniCommandCheck(buf);
-
-        //printf(">invalid command!\n");
-    }
-    
-    
-    UART1_ErrorGet();
-    //buffer clear
-    for(i = 0; i < BUF_NUM; i++){
-        buf[i] = 0;
     }
     
 }
@@ -431,23 +461,17 @@ void tamamoniCommandCheck(uint8_t* tmp_str) {
     
     if (strcmp(clear, command) == 0) {
         ESP32slave_ClearCommand();
-
     } else if (strcmp(reset, command) == 0) {
         ESP32slave_ResetCommand();
-
     } else if (strcmp(defaultSet, command) == 0) {
         ESP32slave_DefaultSetCommand();
-
     } else if (strcmp(offset, command) == 0) {
         ESP32slave_OffSetCommand(val);
-
     } else if (strcmp(aimpoint, command) == 0) {
         ESP32slave_AimpointCommand(val);
-
     } else if (strcmp(brightness, command) == 0) {
         ESP32slave_BrightnessCommand(val);
     } else {
-        //
         printf("> invalid command!\n");
     }
 
