@@ -58,6 +58,7 @@
 
 //video SYNC LED (Blue)
 #define videoSyncStart()    TMR4_Start()    //OCMP(PWM)start
+#define videoSyncStop()     TMR4_Stop()     //OCMP(PWM)stop
 #define PT1_LAN     0                       //LANケーブル有線接続
 #define SyncLAN8()  CLC3_Enable(PT1_LAN)    //CLC2INA(LAN.8) --> videoSYNC
 #define PT1_WIFI    1                       //ESP-NOW無線接続
@@ -131,7 +132,7 @@ int main ( void ){
     uint16_t            shotCnt = 0;        //ショットカウントは1から。0は入力無し
     uint8_t             dispTimer = 0;
     uint8_t             ledTimer = 0;       //ステータスLEDを消すまでのタイマー
-    uint8_t             pt1Timer = 0;       //有線接続チェックタイマー
+    uint8_t             pt1Timer = 4;       //有線接続チェックタイマー
     UART_SERIAL_SETUP   rs485set;
 
     
@@ -248,10 +249,9 @@ int main ( void ){
             
             cnt = 80;
             while(cnt > 0){
-                CORETIMER_DelayUs(10);        //つづいての入力信号を待つ時間 10us x 80 = 800usec
+                CORETIMER_DelayUs(10);      //つづいての入力信号を待つ時間 10us x 80 = 800usec
                 cnt--;
                 if (sensorCnt >= NUM_SENSOR){
-                    TMR4_Stop();            //PWM off
                     break;
                 }
             }
@@ -262,7 +262,7 @@ int main ( void ){
             ICAP4_Disable();
             ICAP5_Disable();        //入力がなかった時もあるはずなので止める
             TMR2_Stop();
-            TMR4_Stop();            //PWM stop
+            videoSyncStop();        //PWM stop
             impact_PT4_Off();       //着弾センサ出力オフ->タマモニへいく信号
             
             shotCnt++;
@@ -314,7 +314,7 @@ int main ( void ){
                     ledLightOff(LED_BLUE | LED_YELLOW | LED_PINK);
                 }
                 
-                if ((pt1Timer % 8) == 4){
+                if ((pt1Timer % 8) == 0){
                     //PT1...LAN or WiFi
                     if (PT1_Get()){
                         //無線
@@ -337,6 +337,8 @@ int main ( void ){
 #ifdef PT1_DELAY_TEST
             if ((pt1_Flag == 1) && (pt1Esp_Flag == 1)){
                 printf("PT1 ESP-NOW delay %6dusec\n", (pt1TimerEnd - pt1TimerStart) * 1000000 / TMR2_FrequencyGet());
+                pt1_Flag = 0;
+                pt1Esp_Flag = 0;
             }
 #endif    
         }
