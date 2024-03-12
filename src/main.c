@@ -69,6 +69,8 @@ debugger_mode_sour_t  debuggerMode = NONE;
 //local
 const uint8_t fw_ver[] = "0.55";    //firmware version
 bool        mainSwFlag = 0;         //メインスイッチ割込
+bool        pt1Esp_Flag = 0;        //PT1(無線)割込
+bool        pt1_Flag = 0;           //PT1(有線)割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
 //uint32_t    uartBaudrate = 9600;    //RS485ボーレート
 uint32_t    uartBaudrate = 115200;
@@ -76,11 +78,20 @@ uint32_t    uartBaudrate = 115200;
 
 //--- callback ----------------------------------------------------------
 
-void mainSwOn_callback(EXTERNAL_INT_PIN extIntPin, uintptr_t context)
-{
-    if (extIntPin == EXTERNAL_INT_4){
-        mainSwFlag = 1;
+void mainSwOn_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
+    mainSwFlag = 1;
+}
+
+void pt1Esp_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
+    pt1Esp_Flag = 1;
+    if (wifiコネクト){
+        //無線の時
+        TMR4_Start();   //PWMスタート
     }
+}
+
+void pt1Lan_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
+    pt1_Flag = 1;
 }
 
 
@@ -97,6 +108,8 @@ int main ( void ){
     uint16_t            shotCnt = 0;        //ショットカウントは1から。0は入力無し
     uint8_t             dispTimer = 0;
     uint8_t             ledTimer = 0;       //ステータスLEDを消すまでのタイマー
+    uint8_t             pt1Timer = 0;       //有線接続チェックタイマー
+    bool                pt1Wifi = 0;        //PT1..0:有線接続, 1:無線接続
     UART_SERIAL_SETUP   rs485set;
 
     
@@ -114,9 +127,15 @@ int main ( void ){
     ICAP4_CallbackRegister(detectSensor4, 0);
     ICAP5_CallbackRegister(detectSensor5, 0);
 
-     //Main SW interrupt INT4
+    //Main SW interrupt INT4
     EVIC_ExternalInterruptCallbackRegister(EXTERNAL_INT_4, mainSwOn_callback, 0);
     EVIC_ExternalInterruptEnable(EXTERNAL_INT_4);
+    //PT1_ESP(wifi) interrupt INT2
+    EVIC_ExternalInterruptCallbackRegister(EXTERNAL_INT_2, pt1Esp_callback, 0);
+    EVIC_ExternalInterruptEnable(EXTERNAL_INT_2);
+    //PT1(wired) interrupt INT3
+    EVIC_ExternalInterruptCallbackRegister(EXTERNAL_INT_3, pt1Lan_callback, 0);
+    EVIC_ExternalInterruptEnable(EXTERNAL_INT_3);
     
     //RTCC1秒ごと割込
     RTCC_CallbackRegister(timer1sec_callback, 0);
@@ -212,6 +231,7 @@ int main ( void ){
                 CORETIMER_DelayUs(10);        //つづいての入力信号を待つ時間 10us x 80 = 800usec
                 cnt--;
                 if (sensorCnt >= NUM_SENSOR){
+                    TMR4_Stop();            //PWM off
                     break;
                 }
             }
@@ -220,9 +240,10 @@ int main ( void ){
             ICAP2_Disable();
             ICAP3_Disable();
             ICAP4_Disable();
-            ICAP5_Disable();                //入力がなかった時もあるはずなので止める
+            ICAP5_Disable();        //入力がなかった時もあるはずなので止める
             TMR2_Stop();
-            impact_PT4_Off();               //着弾センサ出力オフ->タマモニへいく信号
+            TMR4_Stop();            //PWM stop
+            impact_PT4_Off();       //着弾センサ出力オフ->タマモニへいく信号
             
             shotCnt++;
             ringPos++;
@@ -255,6 +276,7 @@ int main ( void ){
                 timer1secFlag = 0;
                 dispTimer++;
                 ledTimer++;
+                pt1Timer++;
 
                 if ((dispTimer % 8) == 0){     //interval　8sec
                     LED_BLUE_Set();
@@ -268,6 +290,16 @@ int main ( void ){
                 if (ledTimer >= LED_INDICATE_TIME){
                     //正面LEDを消灯
                     ledLightOff(LED_BLUE | LED_YELLOW | LED_PINK);
+                }
+                
+                if ((pt1Timer % 8) == 4){
+                    //PT1...LAN or WiFi
+                    if (PT1_Get()){
+                        //無線
+                        pt1Wifi = 0;
+                    }else{
+                        pt1Wifi = 1;
+                    }
                 }
             }
             

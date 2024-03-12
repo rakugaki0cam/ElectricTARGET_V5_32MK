@@ -255,8 +255,10 @@ void clearData(void){
     ICAP4_Enable();
     ICAP5_Enable();
     
-    TMR2 = 0;
+    TMR2 = 0;       //clear
     TMR2_Start(); 
+    
+    TMR4 = 0;       //clear set
 }
 
 

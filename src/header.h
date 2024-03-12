@@ -76,14 +76,10 @@ extern debugger_mode_sour_t    debuggerMode;    //DEBUGger表示モード
 #define DEBUG_ESP_SLAVE_3_no    //Debug用printf(送信データ)
 
 
-
-
-
-
-
-
 //callback
 void mainSwOn_callback(EXTERNAL_INT_PIN, uintptr_t);
+void pt1Esp_callback(EXTERNAL_INT_PIN, uintptr_t);
+void pt1Lan_callback(EXTERNAL_INT_PIN, uintptr_t);
 void timer1sec_callback(uintptr_t);
 //sub
 void debuggerComand(void);
