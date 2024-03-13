@@ -173,32 +173,38 @@ int main ( void ){
     rs485set.stopBits = UART_STOP_1_BIT;
     UART1_SerialSetup(&rs485set, CPU_CLOCK_FREQUENCY >> 1);  //PBCLK2:60MHz
     
-#define PWM_TEST
-#ifdef PWM_TEST    
-    bool st;
-    //video SYNC LED(Blue)
-    //st = CLC3CONbits.LCOUT;
-    //printf("CLC3(startup) - %d\n", st);
+    //video SYNC LED(Blue)  TEST//////////////////////////////////////////////////
+    SyncLAN8();     //startup - 有線接続
 
+#define PWM_TEST
+#ifdef PWM_TEST 
+    printf("\n\n#### PWM TEST #####\n");
+    bool st;
+    st = CLC3CONbits.LCOUT;
+    printf("CLC3(startup) - %d\n", st);
+    
+#define WIRED_no
+#ifdef WIRED
     SyncLAN8();
     st = CLC3CONbits.LCOUT;
     printf("CLC3(LAN8) - %d\n", st);
-
-    //SyncPWM();  //PWM  無線接続時
-    //st = CLC3CONbits.LCOUT;
-    //printf("CLC3(PWM) - %d\n", st);
-    
-    OCMP1_Enable ();
+#else
+    SyncPWM();  //PWM  無線接続時
+    st = CLC3CONbits.LCOUT;
+    printf("CLC3(PWM) - %d\n", st);
+#endif
+    OCMP1_Enable ();    ////////////////////////////////
     uint32_t p = TMR4_PeriodGet();  //PWM period
-    //p = p * 3;  //1sec
+    p = p * 3;  //1sec
     TMR4_PeriodSet(p);
+    TMR4 = p;
     
     uint32_t  d = OCMP1_CompareSecondaryValueGet ();    //PWM On time
-    //d = d * 5;    //Duty 50%
+    d = d * 5*3;    //Duty 50%
     OCMP1_CompareSecondaryValueSet (d);
     
-    printf("wait 2sec  (TMR4 = 0) \n");
-    TMR4 = 10;
+    printf("wait 2sec  \n");
+    //TMR4 = 0;
     CORETIMER_DelayMs(2000);
     
     printf("PWM start\n");
@@ -210,14 +216,11 @@ int main ( void ){
             //トグル
             printf("pt1:Hi...");
             if (toggle == 1){
+                while(VIDEO_SYNC_OUT_Get());        //止めた時は必ずLになるのを待つ
                 videoSyncStop();
                 printf("PWM stop  (TMR4 = %d)\n", TMR4_CounterGet());
-                //OCMP1_Disable();//////////////////////////////////////////////止めた時に必ずLにする
-                printf("wait 2sec\n");
-                CORETIMER_DelayMs(2000);
-                TMR4 = 0;
-                //OCMP1_Enable();////////////////////////////////////////////////)
-                printf("TMR4 = 0\n");
+                //init
+                TMR4 = p;   //タイマカウンタ値をセット
                 toggle = 0;
             }else{
                 videoSyncStart();
