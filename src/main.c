@@ -49,7 +49,7 @@
  * 2024.03.10   v.0.55  PT1_ESP (センサ1 ESP-NOW無線より) --> EXT2/PT1_ESP
  *                      VideoSYNC --> CLC2 CLC3ENで　有線と無線(OCMP PWM)切り替え  
  * 2024.03.12   v.0.56  pt1 無線の時の遅れ時間測定 PT1_DELAY_TEST
- * 
+ * 2024.03.13   v.0.57  OCMP(PWM)テスト
  * 
  */
 
@@ -59,8 +59,8 @@
 //video SYNC LED (Blue)
 #define videoSyncStart()    TMR4_Start()    //OCMP(PWM)start
 #define videoSyncStop()     TMR4_Stop()     //OCMP(PWM)stop
-#define PT1_LAN     0                       //LANケーブル有線接続
-#define SyncLAN8()  CLC3_Enable(PT1_LAN)    //CLC2INA(LAN.8) --> videoSYNC
+#define PT1_WIRED     0                       //LANケーブル有線接続
+#define SyncLAN8()  CLC3_Enable(PT1_WIRED)    //CLC2INA(LAN.8) --> videoSYNC
 #define PT1_WIFI    1                       //ESP-NOW無線接続
 #define SyncPWM()   CLC3_Enable(PT1_WIFI)   //OCMP1(PWM) --> videoSYNC
 
@@ -89,8 +89,8 @@ bool        pt1Connect = 0;         //PT1..0:有線接続, 1:無線接続
 uint32_t    uartBaudrate = 115200;
 
 #ifdef  PT1_DELAY_TEST
-uint32_t    pt1TimerStart = 0;      //PT1ディレイ測定タイマー
-uint32_t    pt1TimerEnd = 0;
+uint32_t    pt1TimerLogStart = 0;      //PT1ディレイ測定タイマー
+uint32_t    pt1TimerLogEnd = 0;
 #endif
 
 //--- callback ----------------------------------------------------------
@@ -105,7 +105,7 @@ void pt1Esp_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
         //無線の時
         videoSyncStart();   //PWMスタート
 #ifdef PT1_DELAY_TEST
-        pt1TimerEnd = TMR2;
+        pt1TimerLogEnd = TMR2;
 #endif
     }
     
@@ -114,7 +114,7 @@ void pt1Esp_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
 void pt1Lan_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
     pt1_Flag = 1;
 #ifdef PT1_DELAY_TEST
-        pt1TimerStart = TMR2;
+        pt1TimerLogStart = TMR2;
 #endif    
 }
 
@@ -173,8 +173,65 @@ int main ( void ){
     rs485set.stopBits = UART_STOP_1_BIT;
     UART1_SerialSetup(&rs485set, CPU_CLOCK_FREQUENCY >> 1);  //PBCLK2:60MHz
     
+#define PWM_TEST
+#ifdef PWM_TEST    
+    bool st;
     //video SYNC LED(Blue)
+    //st = CLC3CONbits.LCOUT;
+    //printf("CLC3(startup) - %d\n", st);
+
     SyncLAN8();
+    st = CLC3CONbits.LCOUT;
+    printf("CLC3(LAN8) - %d\n", st);
+
+    //SyncPWM();  //PWM  無線接続時
+    //st = CLC3CONbits.LCOUT;
+    //printf("CLC3(PWM) - %d\n", st);
+    
+    OCMP1_Enable ();
+    uint32_t p = TMR4_PeriodGet();  //PWM period
+    //p = p * 3;  //1sec
+    TMR4_PeriodSet(p);
+    
+    uint32_t  d = OCMP1_CompareSecondaryValueGet ();    //PWM On time
+    //d = d * 5;    //Duty 50%
+    OCMP1_CompareSecondaryValueSet (d);
+    
+    printf("wait 2sec  (TMR4 = 0) \n");
+    TMR4 = 10;
+    CORETIMER_DelayMs(2000);
+    
+    printf("PWM start\n");
+    videoSyncStart();
+    bool toggle = 1;
+    
+    while(1){
+        if (pt1_Flag){
+            //トグル
+            printf("pt1:Hi...");
+            if (toggle == 1){
+                videoSyncStop();
+                printf("PWM stop  (TMR4 = %d)\n", TMR4_CounterGet());
+                //OCMP1_Disable();//////////////////////////////////////////////止めた時に必ずLにする
+                printf("wait 2sec\n");
+                CORETIMER_DelayMs(2000);
+                TMR4 = 0;
+                //OCMP1_Enable();////////////////////////////////////////////////)
+                printf("TMR4 = 0\n");
+                toggle = 0;
+            }else{
+                videoSyncStart();
+                printf("PWM start\n");
+                toggle = 1;
+            }
+            CORETIMER_DelayMs(500);
+            pt1_Flag = 0;
+        }
+    }
+    
+    //////////////////////////////////////////////test
+#endif
+    
             
     //start up
     CORETIMER_DelayMs(1000);
@@ -317,13 +374,19 @@ int main ( void ){
                 if ((pt1Timer % 8) == 0){
                     //PT1...LAN or WiFi
                     if (PT1_Get()){
-                        //無線
-                        pt1Connect = PT1_LAN;
-                        SyncLAN8();   //CLC3EN - CLC2INA(LAN.8) --> videoSYNC
-                    }else{
                         //有線
-                        pt1Connect = PT1_WIFI;
-                        SyncPWM();    //OCMP1(PWM) --> videoSYNC)
+                        if (pt1Connect != PT1_WIRED){
+                            printf("PT1-Hi: Wired LAN\n");
+                            pt1Connect = PT1_WIRED;
+                            SyncLAN8();   //CLC3EN - CLC2INA(LAN.8) --> videoSYNC
+                        }
+                    }else{
+                        //無線
+                        if (pt1Connect != PT1_WIFI){
+                            printf("PT1-Lo: WiFi ESP\n");
+                            pt1Connect = PT1_WIFI;
+                            SyncPWM();    //OCMP1(PWM) --> videoSYNC)
+                        }
                     }
                 }
             }
@@ -336,7 +399,7 @@ int main ( void ){
             }
 #ifdef PT1_DELAY_TEST
             if ((pt1_Flag == 1) && (pt1Esp_Flag == 1)){
-                printf("PT1 ESP-NOW delay %6dusec\n", (pt1TimerEnd - pt1TimerStart) * 1000000 / TMR2_FrequencyGet());
+                printf("PT1 ESP-NOW delay %6dusec\n", (pt1TimerLogEnd - pt1TimerLogStart) * 1000000 / TMR2_FrequencyGet());
                 pt1_Flag = 0;
                 pt1Esp_Flag = 0;
             }

@@ -68,11 +68,11 @@
 #include "peripheral/gpio/plib_gpio.h"
 #include "peripheral/evic/plib_evic.h"
 #include "peripheral/clc/plib_clc3.h"
-#include "peripheral/clc/plib_clc1.h"
 #include "peripheral/cmp/plib_cmp.h"
+#include "peripheral/clc/plib_clc1.h"
 #include "peripheral/clc/plib_clc2.h"
-#include "peripheral/power/plib_power.h"
 #include "peripheral/i2c/master/plib_i2c1_master.h"
+#include "peripheral/power/plib_power.h"
 #include "peripheral/i2c/slave/plib_i2c2_slave.h"
 #include "peripheral/rtcc/plib_rtcc.h"
 
