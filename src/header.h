@@ -77,14 +77,14 @@ extern debugger_mode_sour_t    debuggerMode;    //DEBUGgerï\é¶ÉÇÅ[Éh
 
 
 //callback
-void mainSwOn_callback(EXTERNAL_INT_PIN, uintptr_t);
-void pt1Esp_callback(EXTERNAL_INT_PIN, uintptr_t);
-void pt1Lan_callback(EXTERNAL_INT_PIN, uintptr_t);
-void timer1sec_callback(uintptr_t);
+void    mainSwOn_callback(EXTERNAL_INT_PIN, uintptr_t);
+void    pt1Esp_callback(EXTERNAL_INT_PIN, uintptr_t);
+void    pt1Lan_callback(EXTERNAL_INT_PIN, uintptr_t);
+void    timer1sec_callback(uintptr_t);
 //sub
-void uartComandCheck(void);
-void debuggerComand(uint8_t*);
-void tamamoniCommandCheck(uint8_t*); 
+void    uartComandCheck(void);
+void    debuggerComand(uint8_t*);
+void    tamamoniCommandCheck(uint8_t*); 
 
 //
 void    videoSync_Init(uint8_t);
@@ -94,8 +94,8 @@ void    videoSync_Stop(void);
 void    VIDEO_SYNC_Wired(void);
 void    VIDEO_SYNC_PWM(void);
 
-
-    
+//test
+void pwm_test(void);
 
 #endif //_HEADER_H
 

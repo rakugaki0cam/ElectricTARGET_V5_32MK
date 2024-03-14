@@ -50,13 +50,18 @@
  *                       VideoSYNC --> CLC2 CLC3ENで　有線と無線(OCMP PWM)切り替え  
  * 2024.03.12   v0.56   pt1 無線の時の遅れ時間測定 PT1_DELAY_TEST
  * 2024.03.13   v0.57   OCMP(PWM)テスト
- * 2024.03.14   v0.58   videoSYNC デバッグ
+ * 2024.03.14   v0.58   videoSYNC デバッグ サブルーチン化
+ * 
+ * 
  * 
  */
 
 #include "header.h"
 
 
+//debug
+debugger_mode_sour_t  debuggerMode = NONE;
+//debugger_mode_sour_t    debuggerMode = FULL_DEBUG;
 //PT1 delay TEST
 #define PT1_DELAY_TEST//_no                 //PT1無線の遅れ時間測定テスト
 
@@ -65,12 +70,6 @@
 uint16_t    ringPos = 0;            //ログデータポインタ
 uint8_t     sensorCnt;              //センサ入力順番のカウント  ////////////////////////
 float       targetY0Offset = 0;     //ターゲットYオフセット
-
-//debug
-debugger_mode_sour_t  debuggerMode = NONE;
-//debugger_mode_sour_t    debuggerMode = FULL_DEBUG;
-
-
 
 //videoSYNC
 #define     WiredLAN        1       
@@ -94,29 +93,32 @@ uint32_t    pt1TimerLogStart = 0;      //PT1ディレイ測定タイマー
 uint32_t    pt1TimerLogEnd = 0;
 #endif
 
+
 //--- callback ----------------------------------------------------------
 
 void mainSwOn_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
+    //メインスイッチ
     mainSwFlag = 1;
 }
 
 void pt1Esp_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
+    //無線もしくはV0センサー接続なし(TARGET ONLY)の時のPT1入力
     pt1Esp_Flag = 1;
     if (pt1Connect == WirelessWiFi){
-        //無線の時
-        T4CONbits.ON = 1;   //videoSync_Start();      //PWMスタート
+        videoSync_Start();      //PWMスタート
 #ifdef PT1_DELAY_TEST
         pt1TimerLogEnd = TMR2;
 #endif
     }
-    
 }
 
+
 void pt1Lan_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
+    //有線のときのPT1入力
     pt1_Flag = 1;
 #ifdef PT1_DELAY_TEST
-        pt1TimerLogStart = TMR2;
-#endif    
+    pt1TimerLogStart = TMR2;
+#endif
 }
 
 
@@ -185,66 +187,8 @@ int main ( void ){
     videoSync_Init(videoFps);
 
 
-#define PWM_TEST
-#ifdef  PWM_TEST 
-    printf("\n\n#### PWM TEST #####\n");
-    bool st;
-    st = CLC3CONbits.LCOUT;
-    printf("CLC3(startup) - %d\n", st);
-    
-#define WIRED_no
-#ifdef  WIRED
-    SyncLAN8();
-    st = CLC3CONbits.LCOUT;
-    printf("CLC3(LAN8) - %d\n", st);
-#else
-    VIDEO_SYNC_PWM();        //startup - WiFi無線接続
-    st = CLC3CONbits.LCOUT;
-    printf("CLC3(PWM) - %d\n", st);
-#endif
-    OCMP1_Enable ();    ////////////////////////////////
-    uint32_t p = TMR4_PeriodGet();  //PWM period
-    p = p * 3;  //1sec
-    TMR4_PeriodSet(p);
-    TMR4 = p;
-    
-    uint32_t  d = OCMP1_CompareSecondaryValueGet ();    //PWM On time
-    d = d * 5 * 3;    //Duty 50%
-    OCMP1_CompareSecondaryValueSet (d);
-    
-    printf("wait 2sec  \n");
-    //TMR4 = 0;
-    CORETIMER_DelayMs(2000);
-    
-    printf("PWM start\n");
-    videoSync_Start();
-    bool toggle = 1;
-    
-    while(1){
-        if (pt1_Flag){
-            //トグル
-            printf("pt1:Hi...");
-            if (toggle == 1){
-                while(VIDEO_SYNC_OUT_Get());        //止めた時は必ずLになるのを待つ
-                videoSync_Stop();
-                printf("PWM stop  (TMR4 = %d)\n", TMR4_CounterGet());
-                //init
-                TMR4 = p;   //タイマカウンタ値をセット
-                toggle = 0;
-            }else{
-                videoSync_Start();
-                printf("PWM start\n");
-                toggle = 1;
-            }
-            CORETIMER_DelayMs(500);
-            pt1_Flag = 0;
-        }
-    }
-    
-    //////////////////////////////////////////////test
-#endif
-    
-            
+    pwm_test();
+
     //start up
     CORETIMER_DelayMs(1000);
     LED_BLUE_Clear();
@@ -303,7 +247,8 @@ int main ( void ){
     //
     measureInit();
     clearData(); 
-    
+    pt1Esp_Flag = 0;
+    pt1_Flag = 0;
     
 //**** MAIN LOOP ********************************************** 
     while ( true )
@@ -312,6 +257,8 @@ int main ( void ){
         SYS_Tasks ( );
         
         //
+        // ((pt1_Flag    != 0) || (pt1Esp_Flag != 0))//PT1オン　= 玉発射 ---> タイムオーバー判定必要
+        
         if (sensorCnt != 0){
             //センサー入力あり = 測定中
             LED_BLUE_Set();
@@ -332,7 +279,7 @@ int main ( void ){
             ICAP5_Disable();        //入力がなかった時もあるはずなので止める
             TMR2_Stop();
             videoSync_Stop();       //PWM stop
-            impact_PT4_Off();       //着弾センサ出力オフ->タマモニへいく信号
+            impact_PT4_Off();       //着弾センサ出力オフ->ESP経由WiFiでタマモニへいく信号
             
             shotCnt++;
             ringPos++;
@@ -383,20 +330,19 @@ int main ( void ){
                     ledLightOff(LED_BLUE | LED_YELLOW | LED_PINK);
                 }
                 
-                if ((pt1Timer % 8) == 0){
+                if ((pt1Timer % 4) == 0){
                     //PT1検出 ... LAN or WiFi切替
+                    videoSync_Stop();
                     if (PT1_Get() == 1){
                         //H:有線
                         if (pt1Connect != WiredLAN){
                             printf("PT1-Hi: Wired LAN\n");
-                            pt1Connect = WiredLAN;
                             VIDEO_SYNC_Wired();
                         }
                     }else{
                         //L:無線
                         if (pt1Connect != WirelessWiFi){
                             printf("PT1-Lo: WiFi ESP\n");
-                            pt1Connect = WirelessWiFi;
                             VIDEO_SYNC_PWM();
                         }
                     }
@@ -568,6 +514,7 @@ void    videoSync_Init(uint8_t rate_fps){
     tmr4Pr = periodPWM * 30 / rate_fps;
     d = onTimePWM * 30 / rate_fps;
     
+    OCMP1_Enable();
     TMR4_PeriodSet(tmr4Pr);
     OCMP1_CompareSecondaryValueSet(d);
     videoSync_Ready();
@@ -602,18 +549,82 @@ void    videoSync_Stop(void){
     
 }
     
-
 void    VIDEO_SYNC_Wired(void){
     //Wired(LAN.8) TamamoniPWM
+    pt1Connect = WiredLAN;
+    EVIC_ExternalInterruptEnable(EXTERNAL_INT_3);   //PT1 interrupt Enable
     CLC3_Enable(0);     //CLC2INA --> CLCO2 
 }
 
 void    VIDEO_SYNC_PWM(void){
     //OCMP1(PWM)
+    pt1Connect = WirelessWiFi;
+    EVIC_ExternalInterruptDisable(EXTERNAL_INT_3);  //PT1 interrupt Disable
     CLC3_Enable(1);     //OCMP1(PWM) --> CLCO2
 }
 
 
+
+////  T E S T  /////////////////////////
+
+void pwm_test(void){
+    
+    printf("\n\n#### PWM TEST #####\n");
+    bool st;
+    st = CLC3CONbits.LCOUT;
+    printf("CLC3(startup) - %d\n", st);
+    
+#define WIRED
+#ifdef  WIRED
+    VIDEO_SYNC_Wired();
+    st = CLC3CONbits.LCOUT;
+    printf("CLC3(LAN8) - %d\n", st);
+#else
+    VIDEO_SYNC_PWM();        //startup - WiFi無線接続
+    st = CLC3CONbits.LCOUT;
+    printf("CLC3(PWM) - %d\n", st);
+#endif
+    OCMP1_Enable ();    ////////////////////////////////
+    uint32_t p = TMR4_PeriodGet();  //PWM period
+    p = p * 3;  //1sec
+    TMR4_PeriodSet(p);
+    TMR4 = p;
+    
+    uint32_t  d = OCMP1_CompareSecondaryValueGet ();    //PWM On time
+    d = d * 5 * 3;    //Duty 50%
+    OCMP1_CompareSecondaryValueSet (d);
+    
+    printf("wait 2sec  \n");
+    //TMR4 = 0;
+    CORETIMER_DelayMs(2000);
+    
+    printf("PWM start\n");
+    videoSync_Start();
+    bool toggle = 1;
+    
+    while(1){
+        if (pt1_Flag){
+            //トグル
+            printf("pt1:Hi...");
+            if (toggle == 1){
+                while(VIDEO_SYNC_OUT_Get());        //止めた時は必ずLになるのを待つ
+                videoSync_Stop();
+                printf("PWM stop  (TMR4 = %d)\n", TMR4_CounterGet());
+                //init
+                TMR4 = p;   //タイマカウンタ値をセット
+                toggle = 0;
+            }else{
+                videoSync_Start();
+                printf("PWM start\n");
+                toggle = 1;
+            }
+            CORETIMER_DelayMs(500);
+            pt1_Flag = 0;
+        }
+    }
+    
+}
+            
 
 /*******************************************************************************
  End of File

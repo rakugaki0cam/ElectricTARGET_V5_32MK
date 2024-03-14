@@ -258,7 +258,8 @@ void clearData(void){
     TMR2 = 0;       //clear
     TMR2_Start(); 
     
-    TMR4 = 0;       //clear set
+    videoSync_Stop();
+    
 }
 
 
