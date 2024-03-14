@@ -86,6 +86,16 @@ void uartComandCheck(void);
 void debuggerComand(uint8_t*);
 void tamamoniCommandCheck(uint8_t*); 
 
+//
+void    videoSync_Init(uint8_t);
+void    videoSync_Ready(void);
+void    videoSync_Start(void);
+void    videoSync_Stop(void);
+void    VIDEO_SYNC_Wired(void);
+void    VIDEO_SYNC_PWM(void);
+
+
+    
 
 #endif //_HEADER_H
 
