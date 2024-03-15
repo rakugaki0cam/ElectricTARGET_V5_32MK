@@ -262,7 +262,7 @@ uint16_t batteryAdcGet(void){
 //***** main switch ************************************************************
 
 void mainSwPush(void){
-    //メインスイッチが押された時
+    //メインスイッチ
     uint8_t     sleep_sw_timer = 0;
 
     CORETIMER_DelayMs(50);      //チャタリング対策

@@ -23,7 +23,6 @@
 #include "definitions.h"                // SYS function prototypes
 #include <string.h>
 #include <math.h>
-#include <xc.h>
 
 //
 #include "BME280v3.h"
@@ -35,7 +34,8 @@
 #include "measureTimeV5.h"
 #include "MyI2C1.h"
 #include "PCF8574.h"
-
+#include "uartCommand.h"
+#include "videoSYNC.h"
 
 //return value
 #define OK      0
@@ -44,7 +44,7 @@
 //DEBUG
 //calculation error -> LED Yellow   //DEBUG 計算時の軽微なエラーの時黄色LEDを点ける
 #define DEBUG_LED_no
-#ifdef DEBUG_LED
+#ifdef  DEBUG_LED
     #define LED_CAUTION   LED_YELLOW
 #else
     #define LED_CAUTION   NO_OUTPUT
@@ -58,10 +58,12 @@
 
 
 //Global
-extern uint8_t      sensorCnt;              //センサ入力順番のカウント
-extern uint16_t     ringPos;                //ログデータポインタ
-extern float        targetY0Offset;         //ターゲットYオフセット
-
+extern uint8_t      sensorCnt;          //センサ入力順番のカウント
+extern uint16_t     ringPos;            //ログデータポインタ
+extern float        targetY0Offset;     //ターゲットYオフセット
+extern bool         pt1Connect;         //PT1..0:有線接続, 1:無線接続
+#define     WiredLAN        1       
+#define     WirelessWiFi    0
 
 extern debugger_mode_sour_t    debuggerMode;    //DEBUGger表示モード
 
@@ -81,22 +83,12 @@ void    mainSwOn_callback(EXTERNAL_INT_PIN, uintptr_t);
 void    pt1Esp_callback(EXTERNAL_INT_PIN, uintptr_t);
 void    pt1Lan_callback(EXTERNAL_INT_PIN, uintptr_t);
 void    timer1sec_callback(uintptr_t);
-//sub
-void    uartComandCheck(void);
-void    debuggerComand(uint8_t*);
-void    tamamoniCommandCheck(uint8_t*); 
 
 //
-void    videoSync_Init(uint8_t);
-void    videoSync_Ready(void);
-void    videoSync_Start(void);
-void    videoSync_Stop(void);
-void    VIDEO_SYNC_Wired(void);
-void    VIDEO_SYNC_PWM(void);
+void impact(void);
+void oneSecRoutine(void);
 
-//test
-void pwm_test(void);
-
+    
 #endif //_HEADER_H
 
 /* *****************************************************************************

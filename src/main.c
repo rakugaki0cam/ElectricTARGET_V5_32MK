@@ -50,7 +50,7 @@
  *                       VideoSYNC --> CLC2 CLC3ENで　有線と無線(OCMP PWM)切り替え  
  * 2024.03.12   v0.56   pt1 無線の時の遅れ時間測定 PT1_DELAY_TEST
  * 2024.03.13   v0.57   OCMP(PWM)テスト
- * 2024.03.14   v0.58   videoSYNC デバッグ サブルーチン化
+ * 2024.03.14   v0.58c  videoSYNC デバッグ サブルーチン化 ファイル分離
  * 
  * 
  * 
@@ -70,10 +70,8 @@ debugger_mode_sour_t  debuggerMode = NONE;
 uint16_t    ringPos = 0;            //ログデータポインタ
 uint8_t     sensorCnt;              //センサ入力順番のカウント  ////////////////////////
 float       targetY0Offset = 0;     //ターゲットYオフセット
+bool        pt1Connect = 0;         //PT1..0:有線接続, 1:無線接続
 
-//videoSYNC
-#define     WiredLAN        1       
-#define     WirelessWiFi    0
 
 //local
 const uint8_t fw_ver[] = "0.58";    //firmware version
@@ -81,12 +79,9 @@ bool        mainSwFlag = 0;         //メインスイッチ割込
 bool        pt1Esp_Flag = 0;        //PT1(無線)割込
 bool        pt1_Flag = 0;           //PT1(有線)割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
-bool        pt1Connect = 0;         //PT1..0:有線接続, 1:無線接続
-//uint32_t    uartBaudrate = 9600;  //RS485ボーレート
-uint32_t    uartBaudrate = 115200;
-uint32_t    periodPWM;              //PWM period
-uint32_t    onTimePWM;              //PWM On time
-uint32_t    tmr4Pr;                 //Timer4 Priod - PWM reset
+uint8_t     dispTimer = 0;
+uint8_t     ledTimer = 0;       //ステータスLEDを消すまでのタイマー
+uint8_t     pt1Timer = 4;       //有線接続チェックタイマー
 
 #ifdef  PT1_DELAY_TEST
 uint32_t    pt1TimerLogStart = 0;      //PT1ディレイ測定タイマー
@@ -131,14 +126,8 @@ void timer1sec_callback(uintptr_t context){
 //--- main ---------------------------------------------------------------
 
 int main ( void ){
-    uint8_t cnt;
-    meas_stat_sor_t     measStat;
-    uint16_t            shotCnt = 0;        //ショットカウントは1から。0は入力無し
-    uint8_t             dispTimer = 0;
-    uint8_t             ledTimer = 0;       //ステータスLEDを消すまでのタイマー
-    uint8_t             pt1Timer = 4;       //有線接続チェックタイマー
-    UART_SERIAL_SETUP   rs485set;
-    uint16_t            videoFps;                //ビデオフレームレート
+    
+    uint16_t            videoFps;           //ビデオフレームレート
 
     
     //Initialize all modules
@@ -172,34 +161,12 @@ int main ( void ){
     I2C1_CallbackRegister(MyI2CCallback, 0);    //NULL);
     
     //UART
-    rs485set.baudRate = uartBaudrate;
-    rs485set.parity = UART_PARITY_NONE;
-    rs485set.dataWidth = UART_DATA_8_BIT;
-    rs485set.stopBits = UART_STOP_1_BIT;
-    UART1_SerialSetup(&rs485set, CPU_CLOCK_FREQUENCY >> 1);  //PBCLK2:60MHz
+    uartCommand_Init();
     
-    
-    //video SYNC LED(Blue)  TEST//////////////////////////////////////////////////
-    periodPWM = TMR4_PeriodGet();                      //333msec = 30fps
-    onTimePWM = OCMP1_CompareSecondaryValueGet ();     //33msec - 10コマごと
-    VIDEO_SYNC_PWM();        //startup - WiFi無線接続
-    videoFps = 30;
-    videoSync_Init(videoFps);
-
-
-    pwm_test();
+    //pwm_test();
 
     //start up
     CORETIMER_DelayMs(1000);
-    LED_BLUE_Clear();
-    CORETIMER_DelayMs(200);
-    LED_BLUE_Set();
-    CORETIMER_DelayMs(100);
-    LED_BLUE_Clear();
-    CORETIMER_DelayMs(200);
-    LED_BLUE_Set();
-    CORETIMER_DelayMs(100);
-    LED_BLUE_Clear();
     
     printf("\n");
     printf("********************\n");
@@ -211,7 +178,17 @@ int main ( void ){
     printf("mode change .... R\n");
     printf("target clear ... C\n");
     printf("--- INIT -----------\n");
-
+    
+    LED_BLUE_Clear();
+    CORETIMER_DelayMs(200);
+    LED_BLUE_Set();
+    CORETIMER_DelayMs(100);
+    LED_BLUE_Clear();
+    CORETIMER_DelayMs(200);
+    LED_BLUE_Set();
+    CORETIMER_DelayMs(100);
+    LED_BLUE_Clear();
+    
     //I2Cセンサ類初期設定
     ip5306_Init();      //Li-ion Battery charger&booster
     BME280_Init();      //BMP280 temp&pressure
@@ -233,128 +210,47 @@ int main ( void ){
     CMP_2_CompareEnable();
     CMP_3_CompareEnable();
     CMP_4_CompareEnable();
-    CMP_5_CompareEnable();  
+    CMP_5_CompareEnable(); 
+      
+    //video SYNC init
+    VIDEO_SYNC_PWM();        //startup - WiFi無線接続
+    videoFps = 30;
+    videoSync_Init(videoFps);
     
     printf("--------------------\n");
     printf("\n");
-    //hardware init complete
+    ////  hardware init complete ///////////////////////////////
     
     //uart buffer clear
     while(UART1_ReceiverIsReady()) {
         UART1_ReadByte();
     }
     
-    //
     measureInit();
     clearData(); 
     pt1Esp_Flag = 0;
     pt1_Flag = 0;
+ 
     
 //**** MAIN LOOP ********************************************** 
     while ( true )
     {
         //Maintain state machines of all polled MPLAB Harmony modules.
         SYS_Tasks ( );
-        
-        //
-        // ((pt1_Flag    != 0) || (pt1Esp_Flag != 0))//PT1オン　= 玉発射 ---> タイムオーバー判定必要
-        
-        if (sensorCnt != 0){
-            //センサー入力あり = 測定中
-            LED_BLUE_Set();
-            
-            cnt = 80;
-            while(cnt > 0){
-                CORETIMER_DelayUs(10);      //つづいての入力信号を待つ時間 10us x 80 = 800usec
-                cnt--;
-                if (sensorCnt >= NUM_SENSOR){
-                    break;
-                }
-            }
-            
-            ICAP1_Disable();
-            ICAP2_Disable();
-            ICAP3_Disable();
-            ICAP4_Disable();
-            ICAP5_Disable();        //入力がなかった時もあるはずなので止める
-            TMR2_Stop();
-            videoSync_Stop();       //PWM stop
-            impact_PT4_Off();       //着弾センサ出力オフ->ESP経由WiFiでタマモニへいく信号
-            
-            shotCnt++;
-            ringPos++;
-            if (ringPos > LOG_MEM){
-                //ログメモリポインタ制限
-                ringPos = 0;
-            }
-            
-            measStat = measureMain(shotCnt);
-            serialPrintResult(shotCnt, measStat, debuggerMode);
-            //log_data_make(shot_count);    //////////////////////////////////////////////////////////////////////
-            
-            //CORETIMER_DelayMs(100);     //printf表示処理が残っていて再トリガしてしまうので待つ////////////フルオート対応できない//////////////////////
-            clearData();
-            ledTimer = 0;
-            pt1_Flag = 0;
-            pt1Esp_Flag = 0;
-            
-            LED_BLUE_Clear();
-            
-        }else{       
-            //(sensorCnt == 0)測定中ではない時
-            
-            uartComandCheck();
-            
-            //
-            if (timer1secFlag ){
-                //1秒ごと処理
-                TMR2 = 0;       //1秒ごとタイマクリア。タイマは2秒までカウント。測定中はクリアされない。
-                TMR2_Start();
-                //
-                timer1secFlag = 0;
-                dispTimer++;
-                ledTimer++;
-                pt1Timer++;
+         
+        impact();
 
-                if ((dispTimer % 8) == 0){     //interval　8sec
-                    LED_BLUE_Set();
-                    ESP32slave_SendBatData();
-                    LED_BLUE_Clear();
-                }else if(POWERSAVING_NORMAL == sleepStat){
-                    BME280_ReadoutSM();
-                }
-                
-#define LED_INDICATE_TIME   6
-                if (ledTimer >= LED_INDICATE_TIME){
-                    //正面LEDを消灯
-                    ledLightOff(LED_BLUE | LED_YELLOW | LED_PINK);
-                }
-                
-                if ((pt1Timer % 4) == 0){
-                    //PT1検出 ... LAN or WiFi切替
-                    videoSync_Stop();
-                    if (PT1_Get() == 1){
-                        //H:有線
-                        if (pt1Connect != WiredLAN){
-                            printf("PT1-Hi: Wired LAN\n");
-                            VIDEO_SYNC_Wired();
-                        }
-                    }else{
-                        //L:無線
-                        if (pt1Connect != WirelessWiFi){
-                            printf("PT1-Lo: WiFi ESP\n");
-                            VIDEO_SYNC_PWM();
-                        }
-                    }
-                }
-            }
+        if ((pt1_Flag == 0) && (pt1Esp_Flag == 0)){    
+            //玉発射を検出していない時
+            uartComandCheck();
+            oneSecRoutine();
             
-            //
             if (mainSwFlag){
                 //INT4　電源スイッチの処理
                 mainSwPush();
                 mainSwFlag = 0;
             }
+            
 #ifdef PT1_DELAY_TEST
             if ((pt1_Flag == 1) && (pt1Esp_Flag == 1)){
                 printf("PT1 ESP-NOW delay %6dusec\n", (pt1TimerLogEnd - pt1TimerLogStart) * 1000000 / TMR2_FrequencyGet());
@@ -363,268 +259,124 @@ int main ( void ){
             }
 #endif    
         }
-  
+        
     }
-
     /* Execution should not come here during normal operation */
-
     return ( EXIT_FAILURE );
+    
 }
 
 
-//----- sub --------------------------------------------------------------------
 
-void uartComandCheck(void){
-    //キー入力で表示モードを切り替え
-#define     BUF_NUM     250     //UARTデータ読込バッファ数
-    uint8_t buf[BUF_NUM];       //UARTデータ読込バッファ
-    uint8_t i;
-    
-    if (!UART1_ReceiverIsReady()){
+//  subroutine ///
+
+void impact(void){
+    //着弾後の処理
+    uint8_t             cnt;
+    meas_stat_sor_t     measStat;
+    uint16_t            shotCnt = 0;        //ショットカウントは1から。0は入力無し
+ 
+    if (sensorCnt == 0){
+        //センサー入力なし
         return;
     }
     
-    //シリアル(タマモニ、デバッガー)から受信あり
-    for(i = 0; i < 5; i++){
-        buf[i] = 0;
-    }
-    i = 0;
-    while(UART1_ReceiverIsReady()) {
-        buf[i] = UART1_ReadByte();
-        if ((buf[i] == ',') || (buf[i] == 0)){ //end mark
-            i++;
-            buf[i] = 0;
-            printf("buf='%s'\n", buf);
-            CORETIMER_DelayMs(50);
-            break;
-        }
-        i++;
-        if (i > BUF_NUM){
-            printf("uart command too long!\n");
-            //buffer clear
-            return;
-        }
-        CORETIMER_DelayUs(90);          //受信待ち 115200bps 1バイトデータは約78us
-        if (uartBaudrate != 115200){
-            CORETIMER_DelayUs(1000);    //受信待ち 9600bps 1バイトデータは約938us
-        }
-    }
+    //着弾
+    LED_BLUE_Set();
     
-    debuggerComand(buf);
-    tamamoniCommandCheck(buf);
-    
-    UART1_ErrorGet();
-    //buffer clear
-    for(i = 0; i < BUF_NUM; i++){
-        buf[i] = 0;
-    }
-    
-}
-    
-    
-void debuggerComand(uint8_t* buf){
-    //DEBUGger出力モードの切り替え
-    if (((buf[0] == 'R') | (buf[0] == 'r')) && ((buf[1] + buf[2] + buf[3] + buf[4]) == 0)){
-        switch(debuggerMode){
-            case NONE:
-                debuggerMode = SINGLE_LINE;
-                printf(">single line mode\n");
-                break;
-            case SINGLE_LINE:
-                debuggerMode = MEAS_CALC;
-                printf(">result mode\n");
-                break;
-            case MEAS_CALC:
-                debuggerMode = FULL_DEBUG;
-                printf(">full debug mode\n");
-                break;
-            case FULL_DEBUG:
-                debuggerMode = CSV_DATA;
-                printf(">csv output mode\n");
-                printDataCSVtitle();
-                break;
-            case CSV_DATA:
-                debuggerMode = NONE;
-                printf(">no output mode\n");
-                break;
-            default:
-                debuggerMode = NONE;    //failsafe
-                break;
-        }
-    }else if (((buf[0] == 'C') | (buf[0] == 'c')) && ((buf[1] + buf[2] + buf[3] + buf[4]) == 0)){
-        //ターゲットクリア
-        printf(">target clear\n");
-        ESP32slave_ClearCommand();
-    }
-    
-}
-
-
-// Tamamoni TARGET Command ------------------------------------------------------------------------------------------
-void tamamoniCommandCheck(uint8_t* tmp_str) {
-    //タマモニからのコマンドを確認し実行
-    char command[10] = { 0 };  //9文字まで
-    const char clear[] = "CLEAR";
-    const char reset[] = "RESET";
-    const char defaultSet[] = "DEFAULT";
-    const char offset[] = "OFFSET";
-    const char aimpoint[] = "AIMPOINT";
-    const char brightness[] = "BRIGHT";
-    float val = 0;
-    uint8_t   num;
-
-    num = sscanf((char*)tmp_str, "TARGET_%s %f END", command, &val);   //valのところの数字は無くても正常に動くみたい
-    if (num == 0) {
-        //型が合わなかったとき
-        printf("'%s' is not command!\n", tmp_str);
-        return;
-    }                                                                     
-    //コマンド
-    printf("Detect TamaMoni command(%d) :%s   %f --- ", num, command, val);
-    
-    if (strcmp(clear, command) == 0) {
-        ESP32slave_ClearCommand();
-    } else if (strcmp(reset, command) == 0) {
-        ESP32slave_ResetCommand();
-    } else if (strcmp(defaultSet, command) == 0) {
-        ESP32slave_DefaultSetCommand();
-    } else if (strcmp(offset, command) == 0) {
-        ESP32slave_OffSetCommand(val);
-    } else if (strcmp(aimpoint, command) == 0) {
-        ESP32slave_AimpointCommand(val);
-    } else if (strcmp(brightness, command) == 0) {
-        ESP32slave_BrightnessCommand(val);
-    } else {
-        printf("> invalid command!\n");
-    }
-
-}
-
-
-void    videoSync_Init(uint8_t rate_fps){
-    //フレームレートの設定
-    //uint32_t tmr4Pr; -> global
-    uint32_t d;
-    
-    if ((rate_fps <= 0) || (rate_fps > 100000)){
-        printf("video %dfps error! --> 30fps", rate_fps);
-        rate_fps = 30;
-    }
-    
-    tmr4Pr = periodPWM * 30 / rate_fps;
-    d = onTimePWM * 30 / rate_fps;
-    
-    OCMP1_Enable();
-    TMR4_PeriodSet(tmr4Pr);
-    OCMP1_CompareSecondaryValueSet(d);
-    videoSync_Ready();
-    
-} 
-
-
-void    videoSync_Ready(void){
-    //タイマカウンタ値をセット　待機でL、スタートでHになるようにするため
-    TMR4 = tmr4Pr;
-}
-    
-void    videoSync_Start(void){
-    //LED点滅点灯開始
-    TMR4_Start();       //OCMP(PWM)start
-}
-    
-void    videoSync_Stop(void){
-    //LED消灯
-    uint32_t    cnt = tmr4Pr << 1;
-    
-    while(VIDEO_SYNC_OUT_Get()){
-        //Lになるのを待って止める
+    //測定完了待ち
+    cnt = 80;
+    while(cnt > 0){
+        CORETIMER_DelayUs(10);      //つづいての入力信号を待つ時間 10us x 80 = 800usec
         cnt--;
-        if (cnt <= 0){
-            printf("PWMstop timeover!\n");
+        if (sensorCnt >= NUM_SENSOR){
             break;
         }
     }
-    TMR4_Stop();       //OCMP(PWM)stop
-    videoSync_Ready();
     
+    //測定停止
+    ICAP1_Disable();
+    ICAP2_Disable();
+    ICAP3_Disable();
+    ICAP4_Disable();
+    ICAP5_Disable();        //入力がなかった時もあるはずなので止める
+    TMR2_Stop();
+    videoSync_Stop();       //PWM stop
+    impact_PT4_Off();       //着弾センサ出力オフ->ESP経由WiFiでタマモニへいく信号
+
+    //データ処理
+    shotCnt++;
+    ringPos++;
+    if (ringPos > LOG_MEM){
+        //ログメモリポインタ制限
+        ringPos = 0;
+    }
+
+    measStat = measureMain(shotCnt);
+    serialPrintResult(shotCnt, measStat, debuggerMode);
+    //log_data_make(shot_count);    //////////////////////////////////////////////////////////////////////
+
+    //CORETIMER_DelayMs(100);     //printf表示処理が残っていて再トリガしてしまうので待つ////////////フルオート対応できない//////////////////////
+
+    //次の測定のための準備
+    clearData();
+    ledTimer = 0;
+    pt1_Flag = 0;
+    pt1Esp_Flag = 0;
+    
+    //処理完了
+    LED_BLUE_Clear();
+
 }
-    
-void    VIDEO_SYNC_Wired(void){
-    //Wired(LAN.8) TamamoniPWM
-    pt1Connect = WiredLAN;
-    EVIC_ExternalInterruptEnable(EXTERNAL_INT_3);   //PT1 interrupt Enable
-    CLC3_Enable(0);     //CLC2INA --> CLCO2 
-}
-
-void    VIDEO_SYNC_PWM(void){
-    //OCMP1(PWM)
-    pt1Connect = WirelessWiFi;
-    EVIC_ExternalInterruptDisable(EXTERNAL_INT_3);  //PT1 interrupt Disable
-    CLC3_Enable(1);     //OCMP1(PWM) --> CLCO2
-}
 
 
+void oneSecRoutine(void){
+    
+    if (timer1secFlag ){
+        //1秒ごと処理
+        TMR2 = 0;       //1秒ごとタイマクリア。タイマは2秒までカウント。測定中はクリアされない。
+        TMR2_Start();
+        //
+        timer1secFlag = 0;
+        dispTimer++;
+        ledTimer++;
+        pt1Timer++;
 
-////  T E S T  /////////////////////////
+        if ((dispTimer % 8) == 0){     //interval　8sec
+            LED_BLUE_Set();
+            ESP32slave_SendBatData();
+            LED_BLUE_Clear();
+        }else if(POWERSAVING_NORMAL == sleepStat){
+            BME280_ReadoutSM();
+        }
 
-void pwm_test(void){
-    
-    printf("\n\n#### PWM TEST #####\n");
-    bool st;
-    st = CLC3CONbits.LCOUT;
-    printf("CLC3(startup) - %d\n", st);
-    
-#define WIRED
-#ifdef  WIRED
-    VIDEO_SYNC_Wired();
-    st = CLC3CONbits.LCOUT;
-    printf("CLC3(LAN8) - %d\n", st);
-#else
-    VIDEO_SYNC_PWM();        //startup - WiFi無線接続
-    st = CLC3CONbits.LCOUT;
-    printf("CLC3(PWM) - %d\n", st);
-#endif
-    OCMP1_Enable ();    ////////////////////////////////
-    uint32_t p = TMR4_PeriodGet();  //PWM period
-    p = p * 3;  //1sec
-    TMR4_PeriodSet(p);
-    TMR4 = p;
-    
-    uint32_t  d = OCMP1_CompareSecondaryValueGet ();    //PWM On time
-    d = d * 5 * 3;    //Duty 50%
-    OCMP1_CompareSecondaryValueSet (d);
-    
-    printf("wait 2sec  \n");
-    //TMR4 = 0;
-    CORETIMER_DelayMs(2000);
-    
-    printf("PWM start\n");
-    videoSync_Start();
-    bool toggle = 1;
-    
-    while(1){
-        if (pt1_Flag){
-            //トグル
-            printf("pt1:Hi...");
-            if (toggle == 1){
-                while(VIDEO_SYNC_OUT_Get());        //止めた時は必ずLになるのを待つ
-                videoSync_Stop();
-                printf("PWM stop  (TMR4 = %d)\n", TMR4_CounterGet());
-                //init
-                TMR4 = p;   //タイマカウンタ値をセット
-                toggle = 0;
+#define LED_INDICATE_TIME   6
+        if (ledTimer >= LED_INDICATE_TIME){
+            //正面LEDを消灯
+            ledLightOff(LED_BLUE | LED_YELLOW | LED_PINK);
+        }
+
+        if ((pt1Timer % 4) == 0){
+            //PT1検出 ... LAN or WiFi切替
+            videoSync_Stop();
+            if (PT1_Get() == 1){
+                //H:有線
+                if (pt1Connect != WiredLAN){
+                    printf("PT1-Hi: Wired LAN\n");
+                    VIDEO_SYNC_Wired();
+                }
             }else{
-                videoSync_Start();
-                printf("PWM start\n");
-                toggle = 1;
+                //L:無線
+                if (pt1Connect != WirelessWiFi){
+                    printf("PT1-Lo: WiFi ESP\n");
+                    VIDEO_SYNC_PWM();
+                }
             }
-            CORETIMER_DelayMs(500);
-            pt1_Flag = 0;
         }
     }
-    
-}
             
+}
+
 
 /*******************************************************************************
  End of File
