@@ -79,7 +79,6 @@ extern debugger_mode_sour_t    debuggerMode;    //DEBUGgerï\é¶ÉÇÅ[Éh
 
 
 //callback
-void    mainSwOn_callback(EXTERNAL_INT_PIN, uintptr_t);
 void    pt1Esp_callback(EXTERNAL_INT_PIN, uintptr_t);
 void    pt1Lan_callback(EXTERNAL_INT_PIN, uintptr_t);
 void    timer1sec_callback(uintptr_t);

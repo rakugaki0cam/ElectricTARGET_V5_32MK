@@ -75,13 +75,11 @@ bool        pt1Connect = 0;         //PT1..0:有線接続, 1:無線接続
 
 //local
 const uint8_t fw_ver[] = "0.58";    //firmware version
-bool        mainSwFlag = 0;         //メインスイッチ割込
 bool        pt1Esp_Flag = 0;        //PT1(無線)割込
 bool        pt1_Flag = 0;           //PT1(有線)割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
-uint8_t     dispTimer = 0;
-uint8_t     ledTimer = 0;       //ステータスLEDを消すまでのタイマー
-uint8_t     pt1Timer = 4;       //有線接続チェックタイマー
+uint8_t     timerCount = 0;         //タイマーカウンタ
+uint8_t     ledTimer = 0;           //着弾後のLED表示時間
 
 #ifdef  PT1_DELAY_TEST
 uint32_t    pt1TimerLogStart = 0;      //PT1ディレイ測定タイマー
@@ -90,11 +88,6 @@ uint32_t    pt1TimerLogEnd = 0;
 
 
 //--- callback ----------------------------------------------------------
-
-void mainSwOn_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
-    //メインスイッチ
-    mainSwFlag = 1;
-}
 
 void pt1Esp_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
     //無線もしくはV0センサー接続なし(TARGET ONLY)の時のPT1入力
@@ -237,19 +230,28 @@ int main ( void ){
     {
         //Maintain state machines of all polled MPLAB Harmony modules.
         SYS_Tasks ( );
-         
+        
         impact();
 
-        if ((pt1_Flag == 0) && (pt1Esp_Flag == 0)){    
+        //PT1FLag 　タイムアウト////////////////////////
+        
+        if (pt1_Flag | pt1Esp_Flag){
+            //timeCount = 0;
+        }
+            
+        if (TMR2 >= 180000000U){    //60MHz x 3sec = 180,000,000count
+            TMR2 = 0;       //3秒以上たったらタイマクリア。タイマは4秒までカウント
+            TMR2_Start();
+        }
+            
+        
+        
+        if ((!pt1_Flag) && (!pt1Esp_Flag)){    
             //玉発射を検出していない時
             uartComandCheck();
             oneSecRoutine();
             
-            if (mainSwFlag){
-                //INT4　電源スイッチの処理
-                mainSwPush();
-                mainSwFlag = 0;
-            }
+            mainSwPush();
             
 #ifdef PT1_DELAY_TEST
             if ((pt1_Flag == 1) && (pt1Esp_Flag == 1)){
@@ -320,10 +322,10 @@ void impact(void){
 
     //次の測定のための準備
     clearData();
-    ledTimer = 0;
     pt1_Flag = 0;
     pt1Esp_Flag = 0;
-    
+    ledTimer = 1;   //消灯までのタイマースタート
+
     //処理完了
     LED_BLUE_Clear();
 
@@ -331,34 +333,34 @@ void impact(void){
 
 
 void oneSecRoutine(void){
+#define LED_INDICATE_TIME   6   //sec
     
-    if (timer1secFlag ){
-        //1秒ごと処理
-        TMR2 = 0;       //1秒ごとタイマクリア。タイマは2秒までカウント。測定中はクリアされない。
-        TMR2_Start();
-        //
-        timer1secFlag = 0;
-        dispTimer++;
-        ledTimer++;
-        pt1Timer++;
-
-        if ((dispTimer % 8) == 0){     //interval　8sec
+    
+    if (!timer1secFlag){
+        return;
+    }
+    
+    //1秒ごとカウント　0~7
+    timerCount++;
+    if (timerCount > 7){
+        timerCount = 0;
+    } 
+    
+    switch (timerCount){    //0 ~ 7
+        case 0:
             LED_BLUE_Set();
             ESP32slave_SendBatData();
             LED_BLUE_Clear();
-        }else if(POWERSAVING_NORMAL == sleepStat){
-            BME280_ReadoutSM();
-        }
-
-#define LED_INDICATE_TIME   6
-        if (ledTimer >= LED_INDICATE_TIME){
-            //正面LEDを消灯
-            ledLightOff(LED_BLUE | LED_YELLOW | LED_PINK);
-        }
-
-        if ((pt1Timer % 4) == 0){
-            //PT1検出 ... LAN or WiFi切替
-            videoSync_Stop();
+            break;
+            
+        case 1:
+            if(POWERSAVING_NORMAL == sleepStat){
+                BME280_ReadoutSM();
+            }
+            break;
+            
+        case 3:
+            //PT1接続チェック ... LAN or WiFi切替
             if (PT1_Get() == 1){
                 //H:有線
                 if (pt1Connect != WiredLAN){
@@ -372,9 +374,19 @@ void oneSecRoutine(void){
                     VIDEO_SYNC_PWM();
                 }
             }
+            break;
+    } 
+    
+    //着弾表示LED消灯タイマー
+    if (ledTimer){
+        ledTimer++;
+        if (ledTimer >= LED_INDICATE_TIME){
+            //正面LEDを消灯
+            ledLightOff(LED_BLUE | LED_YELLOW | LED_PINK);
+            ledTimer = 0;   //停止
         }
     }
-            
+      
 }
 
 

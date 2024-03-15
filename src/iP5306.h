@@ -30,6 +30,7 @@ bool        ip5306_ReadStatus(uint8_t*);
 float       batteryVolt(bool);
 uint16_t    batteryAdcGet(void);
 //main switch
+void        mainSwOn_callback(EXTERNAL_INT_PIN, uintptr_t);
 void        mainSwPush(void);
 //
 void        espSleep(void);

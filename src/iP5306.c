@@ -44,6 +44,8 @@
 //Global
 power_saving_mask_t sleepStat = POWERSAVING_NORMAL;
 
+//local
+bool        mainSwFlag = 0;         //メインスイッチ割込
 
 //***** iP5306 *****************************************************************
 bool ip5306_Init(void){
@@ -261,11 +263,23 @@ uint16_t batteryAdcGet(void){
 
 //***** main switch ************************************************************
 
+void mainSwOn_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
+    //メインスイッチ
+    mainSwFlag = 1;
+}
+
+
 void mainSwPush(void){
     //メインスイッチ
     uint8_t     sleep_sw_timer = 0;
-
-    CORETIMER_DelayMs(50);      //チャタリング対策
+    
+    if (!mainSwFlag){
+        return;
+    }
+    mainSwFlag = 0;
+    
+    CORETIMER_DelayMs(10);
+    //チャタリング対策
     if(MAIN_SW_PUSH()){
         printf("mainSW ON\n");
         if (POWERSAVING_NORMAL == sleepStat){
