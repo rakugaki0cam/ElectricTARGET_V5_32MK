@@ -50,7 +50,8 @@
  *                       VideoSYNC --> CLC2 CLC3ENで　有線と無線(OCMP PWM)切り替え  
  * 2024.03.12   v0.56   pt1 無線の時の遅れ時間測定 PT1_DELAY_TEST
  * 2024.03.13   v0.57   OCMP(PWM)テスト
- * 2024.03.14   v0.58c  videoSYNC デバッグ サブルーチン化 ファイル分離
+ * 2024.03.14   v0.58d  videoSYNC デバッグ サブルーチン化 ファイル分離 PT1玉発射検出
+ * 2024.03.15   v0.59   PT1タイムアウト処理、videoSYNCタイムアウト処理
  * 
  * 
  * 
@@ -79,11 +80,10 @@ pt1con_sor_t    pt1ConWiFi = WIRED_LAN;
 
 
 //local
-const uint8_t fw_ver[] = "0.58";    //firmware version
+const uint8_t fw_ver[] = "0.59";    //firmware version
 bool        pt1Esp_Flag = 0;        //PT1(無線)割込
 bool        pt1_Flag = 0;           //PT1(有線)割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
-uint8_t     timerCount = 0;         //タイマーカウンタ
 uint8_t     ledTimer = 0;           //着弾後のLED表示時間
 
 
@@ -101,6 +101,8 @@ void pt1Esp_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
     if (pt1ConWiFi == WIRELESS_WIFI){
         TMR2 = 0;
         videoSync_Start();      //PWMスタート
+    }else{
+        pt1TimerLogEnd = TMR2;
     }
 }
 
@@ -242,9 +244,9 @@ int main ( void ){
         impact();   //着弾処理
 
         
-        
         if (TMR2 >= 180000000U){    //60MHz x 3sec = 180,000,000count
             TMR2 = 0;       //3秒以上たったらタイマクリア。タイマは4秒までカウント
+            videoSync_Stop();
             pt1_Flag = 0;
             pt1Esp_Flag = 0;
         }
@@ -313,7 +315,7 @@ void impact(void){
     serialPrintResult(shotCnt, measStat, debuggerMode);
     //log_data_make(shot_count);    //////////////////////////////////////////////////////////////////////
 #ifdef PT1_DELAY_TEST
-    printf("PT1 ESP-NOW delay %6dusec\n", (pt1TimerLogEnd - pt1TimerLogStart) * 1000000 / TMR2_FrequencyGet());
+    printf("PT1->ESP-NOW delay %dusec\n", (pt1TimerLogEnd - pt1TimerLogStart) * 1000000 / TMR2_FrequencyGet());
 #endif    
             
     //次の測定のための準備
@@ -330,8 +332,8 @@ void impact(void){
 
 void oneSecRoutine(void){
 #define LED_INDICATE_TIME   6   //sec
-    
-    
+    static uint8_t  timerCount = 0;         //タイマーカウンタ
+
     if (!timer1secFlag){
         return;
     }
@@ -348,29 +350,31 @@ void oneSecRoutine(void){
             ESP32slave_SendBatData();
             LED_BLUE_Clear();
             break;
-            
-        case 1:
-            if(POWERSAVING_NORMAL == sleepStat){
-                BME280_ReadoutSM();
-            }
+        case 2:
             break;
-            
-        case 3:
-            //PT1接続チェック ... LAN or WiFi切替
-            if (PT1_Get() == 1){
-                //H:有線
+        case 4:
+            //PT1接続チェック ... LAN or WiFi切り替え
+            if (PT1_Get() == 1){    
+                //H:有線 (idle High)
                 if (pt1ConWiFi != WIRED_LAN){
                     printf("PT1-Hi: Wired LAN\n");
                     VIDEO_SYNC_Wired();
                 }
             }else{
-                //L:無線
+                //L:無線 (接続なし)
                 if (pt1ConWiFi != WIRELESS_WIFI){
                     printf("PT1-Lo: WiFi ESP\n");
                     VIDEO_SYNC_PWM();
                 }
+            }break;
+        case 6:
+            break;
+        default:    //= 1,3,5,7
+            if(POWERSAVING_NORMAL == sleepStat){
+                BME280_ReadoutSM();
             }
             break;
+                
     } 
     
     //着弾表示LED消灯タイマー
