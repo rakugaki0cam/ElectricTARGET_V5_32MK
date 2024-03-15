@@ -70,7 +70,7 @@ void    videoSync_Stop(void){
 //Ú‘±Œo˜HØ‘Ö
 void    VIDEO_SYNC_Wired(void){
     //Wired(LAN.8) TamamoniPWM
-    pt1Connect = WiredLAN;
+    pt1ConWiFi = WIRED_LAN;
     EVIC_ExternalInterruptEnable(EXTERNAL_INT_3);   //PT1 interrupt Enable
     CLC3_Enable(0);     //CLC2INA --> CLCO2 
 }
@@ -78,7 +78,7 @@ void    VIDEO_SYNC_Wired(void){
 
 void    VIDEO_SYNC_PWM(void){
     //OCMP1(PWM)
-    pt1Connect = WirelessWiFi;
+    pt1ConWiFi = WIRELESS_WIFI;
     EVIC_ExternalInterruptDisable(EXTERNAL_INT_3);  //PT1 interrupt Disable
     CLC3_Enable(1);     //OCMP1(PWM) --> CLCO2
 }

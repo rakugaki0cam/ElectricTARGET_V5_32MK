@@ -60,17 +60,22 @@
 
 
 //debug
-debugger_mode_sour_t  debuggerMode = NONE;
-//debugger_mode_sour_t    debuggerMode = FULL_DEBUG;
+#define FULL_DEBUG_MODE_no
+#ifdef  FULL_DEBUG_MODE
+debugger_mode_sour_t    debuggerMode = FULL_DEBUG;
+#else
+debugger_mode_sour_t    debuggerMode = NONE;
+#endif
+
 //PT1 delay TEST
 #define PT1_DELAY_TEST//_no                 //PT1無線の遅れ時間測定テスト
 
 
 //Global
-uint16_t    ringPos = 0;            //ログデータポインタ
-uint8_t     sensorCnt;              //センサ入力順番のカウント  ////////////////////////
-float       targetY0Offset = 0;     //ターゲットYオフセット
-bool        pt1Connect = 0;         //PT1..0:有線接続, 1:無線接続
+uint16_t        ringPos = 0;            //ログデータポインタ
+uint8_t         sensorCnt;              //センサ入力順番のカウント  ////////////////////////
+float           targetY0Offset = 0;     //ターゲットYオフセット
+pt1con_sor_t    pt1ConWiFi = WIRED_LAN; 
 
 
 //local
@@ -80,6 +85,7 @@ bool        pt1_Flag = 0;           //PT1(有線)割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
 uint8_t     timerCount = 0;         //タイマーカウンタ
 uint8_t     ledTimer = 0;           //着弾後のLED表示時間
+
 
 #ifdef  PT1_DELAY_TEST
 uint32_t    pt1TimerLogStart = 0;      //PT1ディレイ測定タイマー
@@ -92,11 +98,9 @@ uint32_t    pt1TimerLogEnd = 0;
 void pt1Esp_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
     //無線もしくはV0センサー接続なし(TARGET ONLY)の時のPT1入力
     pt1Esp_Flag = 1;
-    if (pt1Connect == WirelessWiFi){
+    if (pt1ConWiFi == WIRELESS_WIFI){
+        TMR2 = 0;
         videoSync_Start();      //PWMスタート
-#ifdef PT1_DELAY_TEST
-        pt1TimerLogEnd = TMR2;
-#endif
     }
 }
 
@@ -104,9 +108,9 @@ void pt1Esp_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
 void pt1Lan_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
     //有線のときのPT1入力
     pt1_Flag = 1;
-#ifdef PT1_DELAY_TEST
-    pt1TimerLogStart = TMR2;
-#endif
+    if (pt1ConWiFi == WIRED_LAN){
+        TMR2 = 0;
+    }
 }
 
 
@@ -167,7 +171,11 @@ int main ( void ){
     printf("*  #2  PIC32MK     *\n");
     printf("*        ver.%s  *\n", fw_ver);
     printf("********************\n");
-    printf(">full debug mode\n");    /////////デバッグ中
+#ifdef  FULL_DEBUG_MODE
+    printf(">full debug mode\n");
+#else
+    printf(">no output mode\n");
+#endif
     printf("mode change .... R\n");
     printf("target clear ... C\n");
     printf("--- INIT -----------\n");
@@ -231,35 +239,22 @@ int main ( void ){
         //Maintain state machines of all polled MPLAB Harmony modules.
         SYS_Tasks ( );
         
-        impact();
+        impact();   //着弾処理
 
-        //PT1FLag 　タイムアウト////////////////////////
         
-        if (pt1_Flag | pt1Esp_Flag){
-            //timeCount = 0;
-        }
-            
+        
         if (TMR2 >= 180000000U){    //60MHz x 3sec = 180,000,000count
             TMR2 = 0;       //3秒以上たったらタイマクリア。タイマは4秒までカウント
-            TMR2_Start();
+            pt1_Flag = 0;
+            pt1Esp_Flag = 0;
         }
             
         
-        
-        if ((!pt1_Flag) && (!pt1Esp_Flag)){    
-            //玉発射を検出していない時
+        //玉発射を検出していない時
+        if (!pt1_Flag && !pt1Esp_Flag){ 
             uartComandCheck();
             oneSecRoutine();
-            
             mainSwPush();
-            
-#ifdef PT1_DELAY_TEST
-            if ((pt1_Flag == 1) && (pt1Esp_Flag == 1)){
-                printf("PT1 ESP-NOW delay %6dusec\n", (pt1TimerLogEnd - pt1TimerLogStart) * 1000000 / TMR2_FrequencyGet());
-                pt1_Flag = 0;
-                pt1Esp_Flag = 0;
-            }
-#endif    
         }
         
     }
@@ -317,9 +312,10 @@ void impact(void){
     measStat = measureMain(shotCnt);
     serialPrintResult(shotCnt, measStat, debuggerMode);
     //log_data_make(shot_count);    //////////////////////////////////////////////////////////////////////
-
-    //CORETIMER_DelayMs(100);     //printf表示処理が残っていて再トリガしてしまうので待つ////////////フルオート対応できない//////////////////////
-
+#ifdef PT1_DELAY_TEST
+    printf("PT1 ESP-NOW delay %6dusec\n", (pt1TimerLogEnd - pt1TimerLogStart) * 1000000 / TMR2_FrequencyGet());
+#endif    
+            
     //次の測定のための準備
     clearData();
     pt1_Flag = 0;
@@ -363,13 +359,13 @@ void oneSecRoutine(void){
             //PT1接続チェック ... LAN or WiFi切替
             if (PT1_Get() == 1){
                 //H:有線
-                if (pt1Connect != WiredLAN){
+                if (pt1ConWiFi != WIRED_LAN){
                     printf("PT1-Hi: Wired LAN\n");
                     VIDEO_SYNC_Wired();
                 }
             }else{
                 //L:無線
-                if (pt1Connect != WirelessWiFi){
+                if (pt1ConWiFi != WIRELESS_WIFI){
                     printf("PT1-Lo: WiFi ESP\n");
                     VIDEO_SYNC_PWM();
                 }
