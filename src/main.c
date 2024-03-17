@@ -52,7 +52,8 @@
  * 2024.03.13   v0.57   OCMP(PWM)テスト
  * 2024.03.14   v0.58d  videoSYNC デバッグ サブルーチン化 ファイル分離 PT1玉発射検出
  * 2024.03.15   v0.59   PT1タイムアウト処理、videoSYNCタイムアウト処理
- * 
+ * 2024.03.16   v0.60   PT1ESP無線接続時の遅れ時間測定 PT1_DELAY_TEST
+ * 2024.03.17   v0.61   PT1接続先データをESP32へI2C送信。(コマンドレジスタ追加)
  * 
  * 
  */
@@ -76,20 +77,20 @@ debugger_mode_sour_t    debuggerMode = NONE;
 uint16_t        ringPos = 0;            //ログデータポインタ
 uint8_t         sensorCnt;              //センサ入力順番のカウント  ////////////////////////
 float           targetY0Offset = 0;     //ターゲットYオフセット
-pt1con_sor_t    pt1ConWiFi = WIRED_LAN; 
+pt1con_sor_t    pt1ConWiFi = UNKNOWN; 
 
 
 //local
-const uint8_t fw_ver[] = "0.59";    //firmware version
+const uint8_t fw_ver[] = "0.61";    //firmware version
 bool        pt1Esp_Flag = 0;        //PT1(無線)割込
 bool        pt1_Flag = 0;           //PT1(有線)割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
+#define     LED_INDICATE_TIME   3   //+1sec
 uint8_t     ledTimer = 0;           //着弾後のLED表示時間
 
 
 #ifdef  PT1_DELAY_TEST
-uint32_t    pt1TimerLogStart = 0;      //PT1ディレイ測定タイマー
-uint32_t    pt1TimerLogEnd = 0;
+uint32_t    pt1EspDelayLog = 0;     //PT1ディレイ測定タイマー
 #endif
 
 
@@ -101,9 +102,10 @@ void pt1Esp_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
     if (pt1ConWiFi == WIRELESS_WIFI){
         TMR2 = 0;
         videoSync_Start();      //PWMスタート
-    }else{
-        pt1TimerLogEnd = TMR2;
     }
+#ifdef  PT1_DELAY_TEST
+    pt1EspDelayLog = TMR2;
+#endif
 }
 
 
@@ -214,6 +216,11 @@ int main ( void ){
     CMP_3_CompareEnable();
     CMP_4_CompareEnable();
     CMP_5_CompareEnable(); 
+    
+    //ext int
+    EVIC_ExternalInterruptEnable(EXTERNAL_INT_4);
+    EVIC_ExternalInterruptEnable(EXTERNAL_INT_2);
+    EVIC_ExternalInterruptEnable(EXTERNAL_INT_3);
       
     //video SYNC init
     VIDEO_SYNC_PWM();        //startup - WiFi無線接続
@@ -229,6 +236,7 @@ int main ( void ){
         UART1_ReadByte();
     }
     
+
     measureInit();
     clearData(); 
     pt1Esp_Flag = 0;
@@ -243,7 +251,7 @@ int main ( void ){
         
         impact();   //着弾処理
 
-        
+        //3秒ごとにタイマーリセット
         if (TMR2 >= 180000000U){    //60MHz x 3sec = 180,000,000count
             TMR2 = 0;       //3秒以上たったらタイマクリア。タイマは4秒までカウント
             videoSync_Stop();
@@ -251,7 +259,6 @@ int main ( void ){
             pt1Esp_Flag = 0;
         }
             
-        
         //玉発射を検出していない時
         if (!pt1_Flag && !pt1Esp_Flag){ 
             uartComandCheck();
@@ -264,7 +271,6 @@ int main ( void ){
     return ( EXIT_FAILURE );
     
 }
-
 
 
 //  subroutine ///
@@ -315,14 +321,20 @@ void impact(void){
     serialPrintResult(shotCnt, measStat, debuggerMode);
     //log_data_make(shot_count);    //////////////////////////////////////////////////////////////////////
 #ifdef PT1_DELAY_TEST
-    printf("PT1->ESP-NOW delay %dusec\n", (pt1TimerLogEnd - pt1TimerLogStart) * 1000000 / TMR2_FrequencyGet());
+    if (pt1ConWiFi == WIRED_LAN){
+        CORETIMER_DelayMs(200);     //着弾データと重なってタマモニがRxエラーになる
+        printf("\n");
+        printf("PT1->ESP-NOW delay %9.3fusec\n", (float)pt1EspDelayLog * 1000000 / TMR2_FrequencyGet());
+        CORETIMER_DelayMs(500);
+    }
 #endif    
             
     //次の測定のための準備
     clearData();
     pt1_Flag = 0;
     pt1Esp_Flag = 0;
-    ledTimer = 1;   //消灯までのタイマースタート
+    ledTimer = LED_INDICATE_TIME   //sec
+;   //消灯までのタイマースタート
 
     //処理完了
     LED_BLUE_Clear();
@@ -331,7 +343,6 @@ void impact(void){
 
 
 void oneSecRoutine(void){
-#define LED_INDICATE_TIME   6   //sec
     static uint8_t  timerCount = 0;         //タイマーカウンタ
 
     if (!timer1secFlag){
@@ -340,6 +351,7 @@ void oneSecRoutine(void){
     
     //1秒ごとカウント　0~7
     timerCount++;
+    timer1secFlag = 0;
     if (timerCount > 7){
         timerCount = 0;
     } 
@@ -350,26 +362,15 @@ void oneSecRoutine(void){
             ESP32slave_SendBatData();
             LED_BLUE_Clear();
             break;
-        case 2:
+        case 3:
+            pt1ConnectCheck();
             break;
         case 4:
-            //PT1接続チェック ... LAN or WiFi切り替え
-            if (PT1_Get() == 1){    
-                //H:有線 (idle High)
-                if (pt1ConWiFi != WIRED_LAN){
-                    printf("PT1-Hi: Wired LAN\n");
-                    VIDEO_SYNC_Wired();
-                }
-            }else{
-                //L:無線 (接続なし)
-                if (pt1ConWiFi != WIRELESS_WIFI){
-                    printf("PT1-Lo: WiFi ESP\n");
-                    VIDEO_SYNC_PWM();
-                }
-            }break;
-        case 6:
             break;
-        default:    //= 1,3,5,7
+        case 7:
+            pt1ConnectCheck();
+            break;
+        default:    //= 1,2,5,6
             if(POWERSAVING_NORMAL == sleepStat){
                 BME280_ReadoutSM();
             }
@@ -379,16 +380,34 @@ void oneSecRoutine(void){
     
     //着弾表示LED消灯タイマー
     if (ledTimer){
-        ledTimer++;
-        if (ledTimer >= LED_INDICATE_TIME){
+        ledTimer--;
+        if (ledTimer <= 0){
             //正面LEDを消灯
             ledLightOff(LED_BLUE | LED_YELLOW | LED_PINK);
-            ledTimer = 0;   //停止
         }
     }
       
 }
 
+
+void pt1ConnectCheck(void){
+    //PT1接続チェック ... LAN or WiFi切り替え
+    if (PT1_Get() == 1){    
+        //H:有線 (idle High)
+        if (pt1ConWiFi != WIRED_LAN){
+            printf("PT1-Hi: Wired LAN\n");
+            VIDEO_SYNC_Wired();
+            ESP32slave_SendPT1Status((uint8_t)pt1ConWiFi);   //LCDへの表示
+        }
+    }else{
+        //L:無線 (接続なし)
+        if (pt1ConWiFi != WIRELESS_WIFI){
+            printf("PT1-Lo: WiFi ESP\n");
+            VIDEO_SYNC_PWM();
+            ESP32slave_SendPT1Status((uint8_t)pt1ConWiFi);   //LCDへの表示
+        }
+    }
+}
 
 /*******************************************************************************
  End of File

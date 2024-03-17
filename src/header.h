@@ -20,9 +20,9 @@
 #include <stddef.h>                     // Defines NULL
 #include <stdbool.h>                    // Defines true
 #include <stdlib.h>                     // Defines EXIT_FAILURE
-#include "definitions.h"                // SYS function prototypes
 #include <string.h>
 #include <math.h>
+#include "definitions.h"                // SYS function prototypes
 
 //
 #include "BME280v3.h"
@@ -64,6 +64,7 @@ extern float        targetY0Offset;     //ターゲットYオフセット
 typedef enum {
     WIRED_LAN,     
     WIRELESS_WIFI,
+    UNKNOWN,
 } pt1con_sor_t;
 
 extern pt1con_sor_t pt1ConWiFi;         //PT1..0:有線接続, 1:無線接続
@@ -89,7 +90,7 @@ void    timer1sec_callback(uintptr_t);
 //
 void impact(void);
 void oneSecRoutine(void);
-
+void pt1ConnectCheck(void);
     
 #endif //_HEADER_H
 
