@@ -117,7 +117,9 @@ uint8_t measureMain(uint16_t shotCnt){
         resultError999(NUM_CAL, calcStat);
         
         measStat = MEASURE_STATUS_NOT_ENOUGH;
-        ledLightOn(LED_PINK);
+        ledLightOn(LED_ERROR);
+        uint8_t mes[] = "calc err: num of data not enough";  //40ï∂éö
+        ESP32slave_SendMessage(mes);
         return measStat;
     }
 
@@ -132,7 +134,7 @@ uint8_t measureMain(uint16_t shotCnt){
     }else{
         //ÉGÉâÅ[ÇÃéû
         measStat = MEASURE_STATUS_ERROR;
-        ledLightOn(LED_PINK);
+        ledLightOn(LED_CAUTION);
 
     }
     

@@ -277,7 +277,7 @@ bool    i2c1_ESP32ReadDataBlock(uint8_t i2cId, uint8_t reg, uint8_t* rxData, uin
         //printf("error!\n");
         return ERROR;
     }
-    //一度終了。間にストップコンディションが入る。
+    //一度終了。間にストップコンディションが入る。    
     if (i2c1_BusCheck()){
         printf("I2C bus error!\n");
         return ERROR;

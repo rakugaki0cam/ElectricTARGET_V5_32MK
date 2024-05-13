@@ -260,6 +260,11 @@ calc_stat_sor_t computeEpicenter(void){
     calcResult.delay_time0_msec = impact_time_msec(calcResult.radius0_mm);    //着弾からセンサオンまでの遅れ時間(着弾時刻計算用)
     calcResult.status           = calcStat;
     
+    //計算値全てが範囲外の時、サンプル数が足りない時、エラーLED点灯にしたい//////////////////////////////////////////////////
+    //ledLightOn(LED_ERROR);
+    //uint8_t mes[] = "calc error: xxxxxxxxxxxxx";  //40文字
+    //ESP32slave_SendMessage(mes);
+    
     return calcStat;
 }
 
@@ -279,6 +284,8 @@ calc_stat_sor_t computeXY(uint8_t calNum){
         calcStat = CALC_STATUS_NOT_ENOUGH;
         resultError999(calNum, calcStat);
         ledLightOn(LED_CAUTION);
+        uint8_t mes[] = "calc err:　select 3sensor factor";  //40文字
+        ESP32slave_SendMessage(mes);
 #ifdef  DEBUG_APO_2
         printf("sensor data select error!\n");
 #endif
@@ -294,6 +301,8 @@ calc_stat_sor_t computeXY(uint8_t calNum){
         calcStat = CALC_STATUS_CAL_ERROR;
         resultError999(calNum, calcStat);
         ledLightOn(LED_CAUTION);
+        uint8_t mes[] = "calc err:　calculation error";  //40文字
+        ESP32slave_SendMessage(mes);
 #ifdef  DEBUG_APO_2
         printf("- calculation error!\n");
 #endif
@@ -306,6 +315,8 @@ calc_stat_sor_t computeXY(uint8_t calNum){
         calcStat = CALC_STATUS_R0_ERR;
         resultError999(calNum, calcStat);
         ledLightOn(LED_CAUTION);
+        uint8_t mes[] = "calc err: r0 too big";  //40文字
+        ESP32slave_SendMessage(mes);
 #ifdef  DEBUG_APO_2
         printf(" r0:%f ", calcValue[calNum].radius0_mm);        
         printf("CAL%1d:r0 is too large!\n", (calNum + 1));
@@ -317,6 +328,8 @@ calc_stat_sor_t computeXY(uint8_t calNum){
         calcStat = CALC_STATUS_X0_ERR;
         resultError999(calNum, calcStat);
         ledLightOn(LED_CAUTION);
+        uint8_t mes[] = "calc err: x0 too big";  //40文字
+        ESP32slave_SendMessage(mes);
 #ifdef  DEBUG_APO_2
         printf(" x0:%f ", calcValue[calNum].impact_pos_x_mm);        
         printf("CAL%1d:x0 is too large!\n", (calNum + 1));
@@ -328,6 +341,8 @@ calc_stat_sor_t computeXY(uint8_t calNum){
         calcStat = CALC_STATUS_Y0_ERR;
         resultError999(calNum, calcStat);
         ledLightOn(LED_CAUTION);
+        uint8_t mes[] = "calc err: y0 too big";  //40文字
+        ESP32slave_SendMessage(mes);
 #ifdef  DEBUG_APO_2
         printf(" y0:%f ", calcValue[calNum].impact_pos_y_mm);        
         printf("CAL%1d:y0 is too large!\n", (calNum + 1));
@@ -471,6 +486,8 @@ uint8_t apollonius3circleXYR(uint8_t numResult, sensor_data_t* tmp3Sensor){
             calc_stat = CALC_STATUS_E_ZERO;
             calcValue[numResult].status = calc_stat;
             ledLightOn(LED_CAUTION);
+            uint8_t mes[] = "calc err: e = 0, no solution";  //40文字
+            ESP32slave_SendMessage(mes);
 #ifdef  DEBUG_APO_2
             printf("CAL%1d: E(st) is also zero! ", numResult);
 #endif
@@ -597,6 +614,8 @@ uint8_t apollonius3circleXYR(uint8_t numResult, sensor_data_t* tmp3Sensor){
                 calc_stat = CALC_STATUS_R0_UNDER0;
                 calcValue[numResult].status = calc_stat;
                 ledLightOn(LED_CAUTION);
+                uint8_t mes[] = "calc err: r0 no solution";  //40文字
+                ESP32slave_SendMessage(mes);
 #ifdef  DEBUG_APO_2
                 printf("CAL%1d: R0 is less than zero! ", numResult);
 #endif

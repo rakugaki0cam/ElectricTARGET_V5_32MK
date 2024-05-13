@@ -26,6 +26,8 @@ bool    ESP32slave_SendImpactData(uint8_t*, uint8_t);
 bool    ESP32slave_SendPT1Status(uint8_t);
 bool    ESP32slave_SendTempData(uint32_t);
 bool    ESP32slave_SendBatData(void);
+bool    ESP32slave_SendMessage(uint8_t*);
+
 //sleep
 bool    ESP32slave_SleepCommand(void);
 

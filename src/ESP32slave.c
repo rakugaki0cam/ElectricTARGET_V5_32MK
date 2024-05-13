@@ -34,6 +34,7 @@ typedef enum  {
     REG_DATA_PT1CON     = 0x40, //PT1有線、無線が切り替わった時に送る
     REG_DATA_TEMP       = 0x60, //温度データを送る
     REG_DATA_BAT        = 0x70, //バッテリーデータを送る
+    REG_DATA_MESSAGE    = 0x80, //テキストデータを送る
     REG_TARGET_SLEEP    = 0x90, //ターゲットスリープコマンド
     DATA_SLEEP_KEY      = 0x99, //スリープのkey
 } esp_register_t;
@@ -41,12 +42,18 @@ typedef enum  {
 
 bool ESP32slave_Init(void){
     //ESP32 I2C slave ID check   
-#define DEBUG32_1_no
+#define DEBUG32_1//_no
     
     uint8_t i2cRxData [4] = {0,0,0,0};  //エンドマークを含む
+    uint8_t reply[] = "ESP";
     
     printf("ESP32S3 init ");
     if(i2c1_ESP32ReadDataBlock(ESP_SLAVE_ID, 0x01, i2cRxData, 3)){
+        printf("error!\n");
+        return ERROR;
+    }
+    if (strcmp((char*)i2cRxData, (char*)reply) != 0){
+        //返答不一致
         printf("error!\n");
         return ERROR;
     }
@@ -265,6 +272,20 @@ bool ESP32slave_SendBatData(void) {
 #endif
     return OK;
 }
+
+
+bool ESP32slave_SendMessage(uint8_t* textStr) {
+    //テキストメッセージをESP32へ送る。ESP側でLCDに表示    
+    if (i2c1_WriteDataBlock(ESP_SLAVE_ID, REG_DATA_MESSAGE, textStr, strlen((char*)textStr))){
+#ifdef DEBUG_ESP_SLAVE_0
+        printf("ESPslave error!\n");
+#endif
+        return ERROR;
+    }
+
+    return OK;   
+}
+
 
 
 //**** sleep *******************************************************************

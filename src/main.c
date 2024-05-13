@@ -55,10 +55,14 @@
  * 2024.03.16   v0.60   PT1ESP無線接続時の遅れ時間測定 PT1_DELAY_TEST
  * 2024.03.17   v0.61   PT1接続先データをESP32へI2C送信。(コマンドレジスタ追加) 
  * 2024.03.17   v0.61b  branch [v051_wired_connect] --> masterへmerge 　-ab20a599b4
+ * 2024.03.18           includefileがエディット中に効かない件
+ *                      config-default-xc32-gcc-preprocessing and make-include directoriesに  /Application/microchip/xc32/v4.35/pic32mx/include と /include/proc  と /include/musi を追加
+ * 2024.05.05   v0.62   z方向オフセット22mm (本体を突っ張り棒で固定)
  * 
  * 
  */
 
+#include <xc.h> ///////////
 #include "header.h"
 
 
@@ -82,7 +86,7 @@ pt1con_sor_t    pt1ConWiFi = UNKNOWN;
 
 
 //local
-const uint8_t fw_ver[] = "0.61";    //firmware version
+const uint8_t fw_ver[] = "0.62";    //firmware version
 bool        pt1Esp_Flag = 0;        //PT1(無線)割込
 bool        pt1_Flag = 0;           //PT1(有線)割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
@@ -128,10 +132,8 @@ void timer1sec_callback(uintptr_t context){
 //--- main ---------------------------------------------------------------
 
 int main ( void ){
-    
     uint16_t            videoFps;           //ビデオフレームレート
 
-    
     //Initialize all modules
     SYS_Initialize ( NULL );
     
@@ -237,7 +239,10 @@ int main ( void ){
         UART1_ReadByte();
     }
     
-
+    //connect message
+    uint8_t mes[] = "ESP32 - PIC32 I2C connect OK";
+    ESP32slave_SendMessage(mes);
+    
     measureInit();
     clearData(); 
     pt1Esp_Flag = 0;
