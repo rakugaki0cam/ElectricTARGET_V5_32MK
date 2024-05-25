@@ -239,10 +239,10 @@ bool ESP32slave_SendTempData(uint32_t temp){
 }
 
 
-bool ESP32slave_SendBatData(void) {
+bool ESP32slave_SendBatData(uint8_t* dataToEsp) {
     //バッテリ電圧計測しESP32へ送る
     //init=1:初回
-    uint8_t     dataToEsp[4];
+    
     float       batV;
         
     batV = batteryVolt(0);

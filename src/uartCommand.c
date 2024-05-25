@@ -32,7 +32,7 @@ void uartComandCheck(void){
     uint8_t buf[BUF_NUM];       //UARTデータ読込バッファ
     uint8_t i;
     
-    if (!UART1_ReceiverIsReady()){
+    if (!UART1_ReceiverIsReady() || (POWERSAVING_NORMAL != sleepStat)){
         return;
     }
     

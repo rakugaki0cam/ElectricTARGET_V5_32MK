@@ -3,9 +3,11 @@
  * 
  * 発射タイミング、ビデオ10コマごとマークLEDを点灯
  * 
+ * OCMPモジュールによるPWM出力
  * 
  * Revision history: 
  * 2024.03.15   main.cより分離
+ * 2024.05.25   スリープ前にオフする。
  * 
  */
 #include "header.h"
@@ -35,7 +37,14 @@ void    videoSync_Init(uint8_t rate_fps){
     OCMP1_CompareSecondaryValueSet(d);
     videoSync_Ready();
     
-} 
+}
+
+
+void    videoSync_Off(void){
+    //動作オフする...スリープ時
+    OCMP1_Disable();
+    TMR4_Stop();
+}
 
 
 void    videoSync_Ready(void){

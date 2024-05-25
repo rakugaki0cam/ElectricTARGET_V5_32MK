@@ -293,6 +293,7 @@ void mainSwPush(void){
                 sleep_sw_timer++;
                 if (sleep_sw_timer > 30){   //3秒
                     espSleep();             //PIC以外オフの擬似スリープ状態へ
+                    CORETIMER_DelayMs(5000);   
                     break;
                 }
             }
@@ -313,6 +314,16 @@ void espSleep(void){
     //PICの充電チェック以外をオフ
     sleepStat = POWERSAVING_SLEEP;
     BME280_Sleep();                     //BME280スリープ
+    printf("BME280 sleep\n");
+    //
+    videoSync_Off();
+    printf("videoSYNC off\n");
+    //
+    //EVIC_ExternalInterruptDisable(EXTERNAL_INT_4);  //mainSW
+    EVIC_ExternalInterruptDisable(EXTERNAL_INT_2);  //PT1_ESP
+    EVIC_ExternalInterruptDisable(EXTERNAL_INT_3);  //PT1(tamamoni)
+    printf("interrupt off\n");
+    //
     ledLightOff(LED_BLUE | LED_YELLOW | LED_PINK);  //正面LED消灯
     printf("\n---ESP32 SLEEP-----\n");  //充電完了待ち状態へ節電
     ESP32slave_SleepCommand();          //ESP32スリープ　(電源を切るとI2Cバスに影響が出るため)
@@ -336,6 +347,7 @@ void deepSleep(void){
     
     ///////////////////////// DEEP SLEEP //////////////////////////////////////////////////
     
+    //while(1);
     Nop();
     Nop();
 }

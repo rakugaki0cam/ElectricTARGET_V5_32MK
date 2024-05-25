@@ -58,6 +58,7 @@
  * 2024.03.18           includefileがエディット中に効かない件
  *                      config-default-xc32-gcc-preprocessing and make-include directoriesに  /Application/microchip/xc32/v4.35/pic32mx/include と /include/proc  と /include/musi を追加
  * 2024.05.05   v0.62   z方向オフセット22mm (本体を突っ張り棒で固定)
+ * 2024.05.25   v0.63   充電スリープ時にシンクLEDが点滅してしまうことがあるののフィクス。
  * 
  * 
  */
@@ -86,7 +87,7 @@ pt1con_sor_t    pt1ConWiFi = UNKNOWN;
 
 
 //local
-const uint8_t fw_ver[] = "0.62";    //firmware version
+const uint8_t fw_ver[] = "0.63";    //firmware version
 bool        pt1Esp_Flag = 0;        //PT1(無線)割込
 bool        pt1_Flag = 0;           //PT1(有線)割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
@@ -267,9 +268,9 @@ int main ( void ){
             
         //玉発射を検出していない時
         if (!pt1_Flag && !pt1Esp_Flag){ 
+            mainSwPush();
             uartComandCheck();
             oneSecRoutine();
-            mainSwPush();
         }
         
     }
@@ -350,7 +351,8 @@ void impact(void){
 
 void oneSecRoutine(void){
     static uint8_t  timerCount = 0;         //タイマーカウンタ
-
+    static uint8_t  dataToEsp[4];
+    
     if (!timer1secFlag){
         return;
     }
@@ -364,10 +366,14 @@ void oneSecRoutine(void){
     
     switch (timerCount){    //0 ~ 7
         case 0:
-            LED_BLUE_Set();
-            ESP32slave_SendBatData();
-            LED_BLUE_Clear();
+            if (POWERSAVING_NORMAL == sleepStat){
+                LED_BLUE_Set();
+                ESP32slave_SendBatData(dataToEsp);
+                LED_BLUE_Clear();
+            }
             break;
+        case 1:    
+            ip5306_ReadStatus(dataToEsp);
         case 3:
             pt1ConnectCheck();
             break;

@@ -11,6 +11,7 @@
 
 //
 void    videoSync_Init(uint8_t);
+void    videoSync_Off(void);
 void    videoSync_Ready(void);
 void    videoSync_Start(void);
 void    videoSync_Stop(void);
