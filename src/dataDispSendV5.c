@@ -15,7 +15,8 @@
 
 
 
-void serialPrintResult(uint16_t shotCount, uint8_t meaStat, uint8_t mode){ 
+void serialPrintResult(uint16_t shotCount, uint8_t meaStat, uint8_t mode)
+{ 
     //測定結果、計算結果の表示
 
     dataSendToESP32();  //着弾表示を早くする
@@ -24,7 +25,8 @@ void serialPrintResult(uint16_t shotCount, uint8_t meaStat, uint8_t mode){
     dataSendToTAMAMONI();   //LAN
     
     //CORETIMER_DelayMs(30);  //データ送信の間をつくる/////////////////////////////////////////////////////////////////////////
-    switch(mode){
+    switch(mode)
+    {
         case NONE:
             break;
         case SINGLE_LINE:
@@ -46,7 +48,8 @@ void serialPrintResult(uint16_t shotCount, uint8_t meaStat, uint8_t mode){
 }
 
 
-void dataSendToTAMAMONI(void){
+void dataSendToTAMAMONI(void)
+{
     //タマモニへ座標データ他を有線送信
     //オフセットを加算しないといけない////////////////////////////////////////////オフセット値をPIC側に持たせないと（ESPとのコマンド通信の中で取得させてはどうか？）
     //有線接続時はタマモニ側が受信した時にオフセットを加えている。/////////////(無線の時とのデータの整合性がないのはちょっと問題)
@@ -55,7 +58,8 @@ void dataSendToTAMAMONI(void){
 }
 
 
-void dataSendToESP32(void){
+void dataSendToESP32(void)
+{
     //target LCD(ESP32)へ座標データ他をI2Cで送信
     //ESP32はこのi2cデータを受けとり、ターゲット表示とデータ変換してタマモニへWiFi送信(ESP-NOW)をする。
     
@@ -73,25 +77,31 @@ void dataSendToESP32(void){
 
 //DEBUGger  serial debug
 
-void printSingleLine(uint16_t shotCount, meas_stat_sor_t measStat){
+void printSingleLine(uint16_t shotCount, meas_stat_sor_t measStat)
+{
 //void single_line(uint16_t shot_count, meas_stat_sor_t meas_stat){ /////////////////なぜかここでmeas_stat_sor_tが届いていない????
     //座標のみ　1行表示
     calc_stat_sor_t      calc_stat;
 
-    if (MEASURE_STATUS_OK != measStat){
+    if (MEASURE_STATUS_OK != measStat)
+    {
         printf("%02d:measurement error\n", shotCount);
         return;
     }
     calc_stat = calcResult.status;     //平均値の状態
-    if (CALC_STATUS_AVERAGE_ERR != calc_stat){
+    if (CALC_STATUS_AVERAGE_ERR != calc_stat)
+    {
         printf("%02d:%6.1fx %6.1fy\n", shotCount, calcResult.impact_pos_x_mm, calcResult.impact_pos_y_mm);
-    }else {
+    }
+    else 
+    {
         printf("%02d:calc error\n", shotCount);
     }
 }
 
 
-void printMeasCalc(uint16_t shotCount, meas_stat_sor_t measStat){
+void printMeasCalc(uint16_t shotCount, meas_stat_sor_t measStat)
+{
     //デバッグ用フル表示
     sensor_stat_sor_t   sens_stat;
     calc_stat_sor_t     calc_stat;
@@ -101,42 +111,55 @@ void printMeasCalc(uint16_t shotCount, meas_stat_sor_t measStat){
     
 #ifndef  SENSOR_DATA_DEBUG_TIMER_VALUE
     //入力順タイマーカウント表示 
-    for (i = 0; i < NUM_SENSOR; i++){
-        for (n = 0; n < NUM_SENSOR; n++){
-            if (sensor5Measure[n].input_order == i){
+    for (i = 0; i < NUM_SENSOR; i++)
+    {
+        for (n = 0; n < NUM_SENSOR; n++)
+        {
+            if (sensor5Measure[n].input_order == i)
+            {
             //入力順番号が一致するまで送る
                 break;
             }
         }
         printf("t%1d %08x (", i + 1, sensor5Measure[n].timer_cnt);  //入力順タイマ値 
 
-        if (n == NUM_SENSOR){
+        if (n == NUM_SENSOR)
+        {
             printf("--)\n");    //入力なし
 
-        }else {
+        }
+        else 
+        {
             printf("s%1d)\n", n + 1);  //センサ#
         }
     }
 #endif         
-    for (i = 0; i < NUM_SENSOR; i++){
+    for (i = 0; i < NUM_SENSOR; i++)
+    {
         sens_stat = sensor5Measure[i].status;
-        if (sens_stat == SENSOR_STATUS_OK){
+        if (sens_stat == SENSOR_STATUS_OK)
+        {
             printf("s%1d %6.2fus %6.2fmm\n", i + 1, sensor5Measure[i].delay_time_usec, sensor5Measure[i].distance_mm);
-        }else{
+        }
+        else
+        {
             //検出していない時
             printf("s%1d  ---.--us\n", i + 1);
         }
     }
-    if (MEASURE_STATUS_OK != measStat){
+    if (MEASURE_STATUS_OK != measStat)
+    {
         printf("> measurement error\n");
         return;
     }
     
     //パターン毎の計算結果と平均
     printf("   x0     y0     r0 \n");
-    for (i = 0; i < NUM_CAL; i++){
+    for (i = 0; i < NUM_CAL; i++)
+    {
         calc_stat = calcValue[i].status;
-        switch(calc_stat){
+        switch(calc_stat)
+        {
             case CALC_STATUS_OK:
                 printf("%6.1f %6.1f %6.1f\n", calcValue[i].impact_pos_x_mm, calcValue[i].impact_pos_y_mm, calcValue[i].radius0_mm);
                 break;
@@ -167,10 +190,13 @@ void printMeasCalc(uint16_t shotCount, meas_stat_sor_t measStat){
 
     }
     calc_stat = calcResult.status;     //平均値の状態
-    if (CALC_STATUS_AVERAGE_ERR != calc_stat){
+    if (CALC_STATUS_AVERAGE_ERR != calc_stat)
+    {
         printf("----- result　----\n");
         printf("%6.1f %6.1f %6.1f\n", calcResult.impact_pos_x_mm, calcResult.impact_pos_y_mm, calcResult.radius0_mm);
-    }else {
+    }
+    else 
+    {
         printf("> No average\n");
     }
     
@@ -179,7 +205,8 @@ void printMeasCalc(uint16_t shotCount, meas_stat_sor_t measStat){
 }
 
 
-void printFullDebug(uint16_t shotCount, meas_stat_sor_t measStat){
+void printFullDebug(uint16_t shotCount, meas_stat_sor_t measStat)
+{
     //デバッグ用フル表示
     
     uint8_t             i;
@@ -189,14 +216,18 @@ void printFullDebug(uint16_t shotCount, meas_stat_sor_t measStat){
     printf("\n");
     printf("--- SHOT #%d --------------------------------------------------------------------------------------------------------------------\n", shotCount);
     printf("5Sensor Measure results\n");
-    for (i = 0; i < NUM_SENSOR; i++){
+    for (i = 0; i < NUM_SENSOR; i++)
+    {
         printf("%1d-(sens%1d)in# -> %1d  ", (i + 1), sensor5Measure[i].sensor_num, (sensor5Measure[i].input_order + 1));
         printf("[ x:%6.1f y:%6.1f z:%6.1f ] - ", sensor5Measure[i].sensor_x_mm, sensor5Measure[i].sensor_y_mm, sensor5Measure[i].sensor_z_mm);
         printf("0x%08x dt(0x%08x)  ", sensor5Measure[i].timer_cnt, sensor5Measure[i].delay_cnt);
 
-        if (SENSOR_STATUS_OK == sensor5Measure[i].status){
+        if (SENSOR_STATUS_OK == sensor5Measure[i].status)
+        {
             printf("%7.2fus  %6.2fmm  ", sensor5Measure[i].delay_time_usec, sensor5Measure[i].distance_mm);
-        }else{
+        }
+        else
+        {
             //検出していない時
             printf("----.--us  ---.--mm  ");
         }
@@ -205,7 +236,8 @@ void printFullDebug(uint16_t shotCount, meas_stat_sor_t measStat){
     printf("\n");
     
     printf("10Pattern - Epicenter of 3sensors\n");
-    for (i = 0; i < NUM_CAL; i++){
+    for (i = 0; i < NUM_CAL; i++)
+    {
         printf("%2d-(sens%03X) ", (i + 1), calcValue[i].pattern);
         printf("x:%7.2f  y:%7.2f  r0:%7.2f  ", calcValue[i].impact_pos_x_mm, calcValue[i].impact_pos_y_mm, calcValue[i].radius0_mm);
         printf("dt:%7.3f  err:%2d\n", calcValue[i].delay_time0_msec, calcValue[i].status);
@@ -213,13 +245,15 @@ void printFullDebug(uint16_t shotCount, meas_stat_sor_t measStat){
     printf("\n");
     
     printf("5Group - Variance of 4sensors\n");
-    for (i = 0; i < NUM_GROUP; i++){
+    for (i = 0; i < NUM_GROUP; i++)
+    {
         printf("%2d - (calc%04X)  ", (i + 1), vari5Groupe[i].pattern);
         printf("ave[ n=%1d - x:%8.3f  y:%8.3f  r0:%8.3f ]  ", vari5Groupe[i].sample_n, vari5Groupe[i].average_pos_x_mm, vari5Groupe[i].average_pos_y_mm, vari5Groupe[i].average_radius0_mm);
         printf("dev[ d1:%7.3f  d2:%7.3f  d3:%7.3f  d4:%7.3f ]   ", vari5Groupe[i].dist1_mm2, vari5Groupe[i].dist2_mm2, vari5Groupe[i].dist3_mm2, vari5Groupe[i].dist4_mm2);
         printf("variance:%8.4f [%d]  err:%2d\n", vari5Groupe[i].variance, (vari5Groupe[i].order + 1), vari5Groupe[i].status);
         
-        if (vari5Groupe[i].order == 0){
+        if (vari5Groupe[i].order == 0)
+        {
             selGroup = i;
             stdDev = sqrt(vari5Groupe[i].variance);
         }
@@ -231,7 +265,8 @@ void printFullDebug(uint16_t shotCount, meas_stat_sor_t measStat){
 }
 
 
-void    printDataCSVtitle(void){
+void    printDataCSVtitle(void)
+{
     //表計算用のCSV　タイトル部
     uint8_t i;
     
@@ -241,24 +276,28 @@ void    printDataCSVtitle(void){
     for (i = 1; i <= NUM_CAL; i++){
         printf(",x p%1d  ,y p%1d  ,r p%1d  ", i, i, i);
     }
-    for (i = 1; i <= NUM_SENSOR; i++){
+    for (i = 1; i <= NUM_SENSOR; i++)
+    {
         printf(",dt sen%1d,sen%1d_d ,sen%1d_r", i, i, i);
     }
     printf(",temp\n");
     //2行目
     printf("                                         ,");   //タマモニデータ長分
     printf("     ,mm     ,mm     ,mm     ,      ");
-    for (i = 1; i <= NUM_CAL; i++){
+    for (i = 1; i <= NUM_CAL; i++)
+    {
         printf(",mm    ,mm    ,mm    ");
     }
-    for (i = 1; i <= NUM_SENSOR; i++){
+    for (i = 1; i <= NUM_SENSOR; i++)
+    {
         printf(",usec   ,usec   ,mm    ");
     }
     printf(",deg  \n");
 }
 
 
-void    printDataCSV(uint16_t shotCount){
+void    printDataCSV(uint16_t shotCount)
+{
     //表計算用のCSVデータ　コンマ区切り
     uint8_t i;
     uint8_t stat;
@@ -269,18 +308,23 @@ void    printDataCSV(uint16_t shotCount){
     printf(",%7.2f,%7.2f,%7.2f", calcResult.impact_pos_x_mm, calcResult.impact_pos_y_mm, calcResult.radius0_mm);
     //ステータス
     stat = calcResult.status;
-     if (CALC_STATUS_OK == stat){
+     if (CALC_STATUS_OK == stat)
+     {
         printf(",OK    ");
-    }else{
+    }
+    else
+    {
         printf(",error ");
     }
     
     //4パターン毎x,y,r
-    for (i = 0; i < NUM_CAL; i++){
+    for (i = 0; i < NUM_CAL; i++)
+    {
         printf(",%6.1f,%6.1f,%6.1f", calcValue[i].impact_pos_x_mm, calcValue[i].impact_pos_y_mm, calcValue[i].radius0_mm);
     }
     //センサー順　t,dt,dr
-    for (i = 0; i < NUM_SENSOR; i++){
+    for (i = 0; i < NUM_SENSOR; i++)
+    {
         printf(",%7.2f,%7.2f,%6.1f", sensor5Measure[i].delay_time_usec, sensor5Measure[i].comp_delay_usec, sensor5Measure[i].distance_mm);
     }
     //温度

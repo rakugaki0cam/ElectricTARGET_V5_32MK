@@ -18,11 +18,13 @@
 uint32_t    tmr4Pr;                 //Timer4 Priod - PWM reset
 
 
-void    videoSync_Init(uint8_t rate_fps){
+void    videoSync_Init(uint8_t rate_fps)
+{
     //フレームレートの設定
     uint32_t d;
     
-    if ((rate_fps <= 0) || (rate_fps > 100000)){
+    if ((rate_fps <= 0) || (rate_fps > 100000))
+    {
         printf("video %dfps error! --> 30fps", rate_fps);
         rate_fps = 30;
     }
@@ -40,33 +42,39 @@ void    videoSync_Init(uint8_t rate_fps){
 }
 
 
-void    videoSync_Off(void){
+void    videoSync_Off(void)
+{
     //動作オフする...スリープ時
     OCMP1_Disable();
     TMR4_Stop();
 }
 
 
-void    videoSync_Ready(void){
+void    videoSync_Ready(void)
+{
     //タイマカウンタ値をセット　待機でL、スタートでHになるようにするため
     TMR4 = tmr4Pr;
 }
 
 
-void    videoSync_Start(void){
+void    videoSync_Start(void)
+{
     //LED点滅点灯開始
     TMR4_Start();       //OCMP(PWM)start
 }
 
 
-void    videoSync_Stop(void){
+void    videoSync_Stop(void)
+{
     //LED消灯
     uint32_t    cnt = tmr4Pr << 1;
     
-    while(VIDEO_SYNC_OUT_Get()){
+    while(VIDEO_SYNC_OUT_Get())
+    {
         //Lになるのを待って止める
         cnt--;
-        if (cnt <= 0){
+        if (cnt <= 0)
+        {
             printf("PWMstop timeover!\n");
             break;
         }
@@ -77,17 +85,19 @@ void    videoSync_Stop(void){
     
 
 //接続経路切替
-void    VIDEO_SYNC_Wired(void){
+void    VIDEO_SYNC_Wired(void)
+{
     //Wired(LAN.8) TamamoniPWM
-    pt1ConWiFi = WIRED_LAN;
+    pt1ConnectIs = WIRED_LAN;
     EVIC_ExternalInterruptEnable(EXTERNAL_INT_3);   //PT1 interrupt Enable
     CLC3_Enable(0);     //CLC2INA --> CLCO2 
 }
 
 
-void    VIDEO_SYNC_PWM(void){
+void    VIDEO_SYNC_PWM(void)
+{
     //OCMP1(PWM)
-    pt1ConWiFi = WIRELESS_WIFI;
+    pt1ConnectIs = WIRELESS_WIFI;
     EVIC_ExternalInterruptDisable(EXTERNAL_INT_3);  //PT1 interrupt Disable
     CLC3_Enable(1);     //OCMP1(PWM) --> CLCO2
 }
@@ -96,7 +106,8 @@ void    VIDEO_SYNC_PWM(void){
 
 ////  T E S T  /////////////////////////
 
-void pwm_test(void){
+void pwm_test(void)
+{
     
     printf("\n\n#### PWM TEST #####\n");
     bool st;
@@ -132,21 +143,26 @@ void pwm_test(void){
     videoSync_Start();
     bool toggle = 1;
     
-    while(1){
-        if (PT1_Get()){
+    while(1)
+    {
+        if (PT1_Get())
+        {
             CORETIMER_DelayMs(5);
             //チャタリング
             
             //トグル
             printf("pt1:Hi...");
-            if (toggle == 1){
+            if (toggle == 1)
+            {
                 while(VIDEO_SYNC_OUT_Get());        //止めた時は必ずLになるのを待つ
                 videoSync_Stop();
                 printf("PWM stop  (TMR4 = %d)\n", TMR4_CounterGet());
                 //init
                 TMR4 = p;   //タイマカウンタ値をセット
                 toggle = 0;
-            }else{
+            }
+            else
+            {
                 videoSync_Start();
                 printf("PWM start\n");
                 toggle = 1;

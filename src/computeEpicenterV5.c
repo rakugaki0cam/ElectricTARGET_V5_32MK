@@ -52,7 +52,8 @@ result_ave_t    vari5Groupe[NUM_GROUP];   //結果判定用ばらつきの計算
 #define     CAL10        9
 
 //5つのセンサから3つのセンサを選択する10のパターン
-uint8_t sensor3outOf5[NUM_CAL][3] = {    
+uint8_t sensor3outOf5[NUM_CAL][3] = 
+{    
     { SENSOR1, SENSOR2, SENSOR3},   //CAL1ー計算結果1
     { SENSOR1, SENSOR2, SENSOR4},   //CAL2
     { SENSOR1, SENSOR2, SENSOR5},   //CAL3
@@ -74,7 +75,8 @@ uint8_t sensor3outOf5[NUM_CAL][3] = {
 #define     GROUP4          3
 #define     GROUP5          4
 //4つのセンサからの計算結果4とおり
-uint8_t calcValue4[NUM_GROUP][4] = {
+uint8_t calcValue4[NUM_GROUP][4] = 
+{
     { CAL7, CAL8, CAL9, CAL10},     //GROUP1  SENSOR2,3,4,5　ー　センサ1抜かし
     { CAL4, CAL5, CAL6, CAL10},     //GROUP2  SENSOR1,3,4,5　ー　センサ2抜かし
     { CAL2, CAL3, CAL6, CAL9},      //GROUP3  SENSOR1,2,4,5　ー　センサ3抜かし
@@ -84,7 +86,8 @@ uint8_t calcValue4[NUM_GROUP][4] = {
 
 
 //
-void    clearResult(uint8_t n){
+void    clearResult(uint8_t n)
+{
     //計算結果をクリア
     calcValue[n].pattern = sensorOrderPattern(n);
     calcValue[n].impact_pos_x_mm = 0;
@@ -95,7 +98,8 @@ void    clearResult(uint8_t n){
 }
 
 
-void    resultError999(uint8_t n, calc_stat_sor_t status){
+void    resultError999(uint8_t n, calc_stat_sor_t status)
+{
     //エラーの時、resultにエラー識別数値を書き込む
     //calcValue[n].impact_pos_x_mm = 999.99;/////////////////////////////////////////検算のためオフ
     //calcValue[n].impact_pos_y_mm = 999.99;
@@ -106,7 +110,8 @@ void    resultError999(uint8_t n, calc_stat_sor_t status){
 
 
 //
-calc_stat_sor_t computeEpicenter(void){
+calc_stat_sor_t computeEpicenter(void)
+{
     //着弾座標の計算
     //出力　result[]:計算結果座標x,y,r  グローバル
     //return value calc_stat_sor_tによる
@@ -126,14 +131,16 @@ calc_stat_sor_t computeEpicenter(void){
     
     
     //計算結果クリア
-    for (i = 0; i < NUM_CAL; i++){
+    for (i = 0; i < NUM_CAL; i++)
+    {
         clearResult(i);
     }
     calcResult.pattern = 0xffff;    //平均値識別マーク
 
     
     //5つのセンサから3つを選んで計算する　10とおり
-    for (i = 0; i < NUM_CAL; i++){
+    for (i = 0; i < NUM_CAL; i++)
+    {
         calcStat = computeXY(i);    //座標を計算
     }
     
@@ -143,7 +150,8 @@ calc_stat_sor_t computeEpicenter(void){
     //VERIANCE CHECK　分散チェック
     //センサー4個選択の5グループについて　4つの計算結果数値のばらつきを計算
     
-    for (grNum = 0; grNum < NUM_GROUP; grNum++){
+    for (grNum = 0; grNum < NUM_GROUP; grNum++)
+    {
         calcStat = CALC_STATUS_OK;                          //error clear
         vari5Groupe[grNum].pattern = sensorGroupePattern(grNum);
         
@@ -152,14 +160,18 @@ calc_stat_sor_t computeEpicenter(void){
         tmpX = 0;
         tmpY = 0;
         tmpR = 0;
-        for(i = 0; i < NUM_RES; i++){
+        for(i = 0; i < NUM_RES; i++)
+        {
             calcNum = calcValue4[grNum][i];   //計算ナンバー
-            if (CALC_STATUS_OK == calcValue[calcNum].status){
+            if (CALC_STATUS_OK == calcValue[calcNum].status)
+            {
                 tmpX += calcValue[calcNum].impact_pos_x_mm;
                 tmpY += calcValue[calcNum].impact_pos_y_mm; 
                 tmpR += calcValue[calcNum].radius0_mm;
                 cnt ++;
-            }else {
+            }
+            else 
+            {
                 //計算値が不可だった場合平均計算に含めない
                 calcStat = CALC_STATUS_AVERAGE_ERR;
                 ledLightOn(LED_CAUTION);
@@ -170,7 +182,8 @@ calc_stat_sor_t computeEpicenter(void){
         } // for-i loop 
         
         vari5Groupe[grNum].sample_n = cnt;       //平均値のサンプル数:正常なら4
-        if (cnt == 0){
+        if (cnt == 0)
+        {
             //サンプル数0の時
             vari5Groupe[grNum].average_pos_x_mm   = 999.99;
             vari5Groupe[grNum].average_pos_y_mm   = 999.99; 
@@ -180,7 +193,9 @@ calc_stat_sor_t computeEpicenter(void){
 #ifdef  DEBUG_APO_2            
             printf("group%1d No sample!\n", (grNum + 1));
 #endif
-        }else{
+        }
+        else
+        {
             //平均値
             vari5Groupe[grNum].average_pos_x_mm   = tmpX / cnt;
             vari5Groupe[grNum].average_pos_y_mm   = tmpY / cnt; 
@@ -188,15 +203,18 @@ calc_stat_sor_t computeEpicenter(void){
         }
         
         //4つ計算結果の分散
-        for(i = 0; i < NUM_RES; i++){
+        for(i = 0; i < NUM_RES; i++)
+        {
             calcNum = calcValue4[grNum][i];
-            if (CALC_STATUS_OK == calcValue[calcNum].status){
+            if (CALC_STATUS_OK == calcValue[calcNum].status)
+            {
                 //計算OK
                 tmpX = calcValue[calcNum].impact_pos_x_mm - vari5Groupe[grNum].average_pos_x_mm;
                 tmpY = calcValue[calcNum].impact_pos_y_mm - vari5Groupe[grNum].average_pos_y_mm;
                 dist2[i] = tmpX * tmpX + tmpY * tmpY;   //距離(偏差)の2乗
 
-                if (dist2[i] > (DEV_XY * DEV_XY)){      //ばらつきが範囲を超えている
+                if (dist2[i] > (DEV_XY * DEV_XY))
+                {      //ばらつきが範囲を超えている
                     calcStat = CALC_STATUS_DEV_OVER;
                     ledLightOn(LED_CAUTION);
 #ifdef  DEBUG_APO_2
@@ -204,7 +222,9 @@ calc_stat_sor_t computeEpicenter(void){
 #endif
                 }
                 vari5Groupe[grNum].status = calcStat;
-            }else{
+            }
+            else
+            {
                 calcStat = CALC_STATUS_CAL_ERROR;
                 ledLightOn(LED_CAUTION);
 #ifdef  DEBUG_APO_2
@@ -221,7 +241,8 @@ calc_stat_sor_t computeEpicenter(void){
         vari5Groupe[grNum].dist4_mm2 = dist2[3];
         
         tmpR = 0;
-        for (i = 0; i < NUM_RES; i++){
+        for (i = 0; i < NUM_RES; i++)
+        {
             tmpR += dist2[i];
         }
         vari5Groupe[grNum].variance = tmpR / NUM_RES;     //分散
@@ -233,22 +254,27 @@ calc_stat_sor_t computeEpicenter(void){
     
     
     //*************************ばらつきの順位の計算**********************************
-    for (grNum = 0; grNum < NUM_GROUP; grNum++){
+    for (grNum = 0; grNum < NUM_GROUP; grNum++)
+    {
         cnt = 0;
-        for (i = 0; i < NUM_GROUP; i++){
-            if (vari5Groupe[grNum].sample_n < 4){
+        for (i = 0; i < NUM_GROUP; i++)
+        {
+            if (vari5Groupe[grNum].sample_n < 4)
+            {
                 //サンプル数が少ない時
                 cnt = 8;                ////順位 -> 9の表示が出るように8にする。
                 continue;
             }
-            if (vari5Groupe[grNum].variance > vari5Groupe[i].variance){
+            if (vari5Groupe[grNum].variance > vari5Groupe[i].variance)
+            {
                 //自分の値より小さい値があった時カウントする
                 cnt++;
                 //同じ値があった時は同着ができてしまう......未処理////////////////////
             }
         }
         vari5Groupe[grNum].order = cnt;
-        if (cnt == 0){
+        if (cnt == 0)
+        {
             calcNum = grNum;        //calcNum:ばらつきが最小のグループ番号  ->　採用値
         }
     }
@@ -269,7 +295,8 @@ calc_stat_sor_t computeEpicenter(void){
 }
 
 
-calc_stat_sor_t computeXY(uint8_t calNum){
+calc_stat_sor_t computeXY(uint8_t calNum)
+{
     //3センサデータから座標値を計算
     //Input  calNum:3つのセンサを選択するパターン番号  
     //Output result:計算値
@@ -279,7 +306,8 @@ calc_stat_sor_t computeXY(uint8_t calNum){
     calc_stat_sor_t calcStat = CALC_STATUS_OK;
     
     //tmp3sensorに計算用データ代入
-    if (select3sensor(calNum, threeSensorFactor)){
+    if (select3sensor(calNum, threeSensorFactor))
+    {
         //代入するデータがダメな時
         calcStat = CALC_STATUS_NOT_ENOUGH;
         resultError999(calNum, calcStat);
@@ -296,7 +324,8 @@ calc_stat_sor_t computeXY(uint8_t calNum){
     calcValue[calNum].pattern = sensorOrderPattern(calNum);
     
     //座標の計算
-    if (apollonius3circleXYR(calNum, threeSensorFactor) != 0){
+    if (apollonius3circleXYR(calNum, threeSensorFactor) != 0)
+    {
         //計算がダメなとき
         calcStat = CALC_STATUS_CAL_ERROR;
         resultError999(calNum, calcStat);
@@ -310,7 +339,8 @@ calc_stat_sor_t computeXY(uint8_t calNum){
     }
     
     //計算結果の判定
-    if (calcValue[calNum].radius0_mm > R_MAX){
+    if (calcValue[calNum].radius0_mm > R_MAX)
+    {
         //rが大きすぎる
         calcStat = CALC_STATUS_R0_ERR;
         resultError999(calNum, calcStat);
@@ -323,7 +353,8 @@ calc_stat_sor_t computeXY(uint8_t calNum){
 #endif
         return calcStat;
     }
-    if ((calcValue[calNum].impact_pos_x_mm < -TARGET_WIDTH_HALF) || (calcValue[calNum].impact_pos_x_mm > TARGET_WIDTH_HALF)){
+    if ((calcValue[calNum].impact_pos_x_mm < -TARGET_WIDTH_HALF) || (calcValue[calNum].impact_pos_x_mm > TARGET_WIDTH_HALF))
+    {
         //xが大きすぎる
         calcStat = CALC_STATUS_X0_ERR;
         resultError999(calNum, calcStat);
@@ -336,7 +367,8 @@ calc_stat_sor_t computeXY(uint8_t calNum){
 #endif
         return calcStat;
     }
-    if ((calcValue[calNum].impact_pos_y_mm < -TARGET_HEIGHT_HALF) || (calcValue[calNum].impact_pos_y_mm > TARGET_HEIGHT_HALF)){
+    if ((calcValue[calNum].impact_pos_y_mm < -TARGET_HEIGHT_HALF) || (calcValue[calNum].impact_pos_y_mm > TARGET_HEIGHT_HALF))
+    {
         //yが大きすぎる
         calcStat = CALC_STATUS_Y0_ERR;
         resultError999(calNum, calcStat);
@@ -356,7 +388,8 @@ calc_stat_sor_t computeXY(uint8_t calNum){
 }
 
 
-uint8_t     select3sensor(uint8_t calNum, sensor_data_t* tmp){
+uint8_t     select3sensor(uint8_t calNum, sensor_data_t* tmp)
+{
     //センサ3ケを選択して代入
     //出力tmp3SensorFactor  -計算用の3組のデータ配列
     //stat 0:OK, 1:代入不可
@@ -364,10 +397,14 @@ uint8_t     select3sensor(uint8_t calNum, sensor_data_t* tmp){
     calc_stat_sor_t  calcStat = CALC_STATUS_OK;
    
     //測定値代入
-    for (i = 0; i < 3; i++){
-        if (SENSOR_STATUS_OK == sensor5Measure[sensor3outOf5[calNum][i]].status){
+    for (i = 0; i < 3; i++)
+    {
+        if (SENSOR_STATUS_OK == sensor5Measure[sensor3outOf5[calNum][i]].status)
+        {
             tmp[i] = sensor5Measure[sensor3outOf5[calNum][i]];      //一括代入 .sensor_x, .sensor_y, .sensor_z, .distance_mm
-        } else{
+        } 
+        else
+        {
             //データがダメな時
             calcStat = CALC_STATUS_NOT_ENOUGH;
             calcValue[calNum].status = calcStat;
@@ -383,7 +420,8 @@ uint8_t     select3sensor(uint8_t calNum, sensor_data_t* tmp){
 }
 
 
-uint16_t    sensorOrderPattern(uint8_t calNum){
+uint16_t    sensorOrderPattern(uint8_t calNum)
+{
     //使用センサナンバーを3桁のBCD数字にして記録
     return (sensor3outOf5[calNum][0] + 1) * 0x100 +
            (sensor3outOf5[calNum][1] + 1) * 0x10 +
@@ -391,7 +429,8 @@ uint16_t    sensorOrderPattern(uint8_t calNum){
 }
 
 
-uint16_t    sensorGroupePattern(uint8_t calNum){
+uint16_t    sensorGroupePattern(uint8_t calNum)
+{
     //使用センサナンバーを4桁のBCD数字にして記録
     //123456789A 　A=10
     return (calcValue4[calNum][0] + 1) * 0x1000 +
@@ -401,11 +440,14 @@ uint16_t    sensorGroupePattern(uint8_t calNum){
 }
 
 
-uint8_t firstSensor(void){
+uint8_t firstSensor(void)
+{
     //最初の入力センサーの番号
     uint8_t i;
-    for(i = SENSOR1; i < NUM_SENSOR; i++){
-        if(sensor5Measure[i].input_order == 0){
+    for(i = SENSOR1; i < NUM_SENSOR; i++)
+    {
+        if(sensor5Measure[i].input_order == 0)
+        {
             break;
         }
     }
@@ -416,7 +458,8 @@ uint8_t firstSensor(void){
 
 //*** calculation sub *****************
 
-uint8_t apollonius3circleXYR(uint8_t numResult, sensor_data_t* tmp3Sensor){
+uint8_t apollonius3circleXYR(uint8_t numResult, sensor_data_t* tmp3Sensor)
+{
     //座標の計算
     //リターン値　0:正常
     //          1:エラー
@@ -440,7 +483,8 @@ uint8_t apollonius3circleXYR(uint8_t numResult, sensor_data_t* tmp3Sensor){
 #endif  
     
     //データ代入  ---配列添字の0を使わない
-    for (i = 0; i < 3; i++){
+    for (i = 0; i < 3; i++)
+    {
         x[i + 1] = tmp3Sensor[i].sensor_x_mm;
         y[i + 1] = tmp3Sensor[i].sensor_y_mm;
         z[i + 1] = tmp3Sensor[i].sensor_z_mm;
@@ -470,7 +514,8 @@ uint8_t apollonius3circleXYR(uint8_t numResult, sensor_data_t* tmp3Sensor){
     printf("c1:%10.3f c2:%10.3f c3:%10.3f \n", c[1], c[2], c[3]);
     printf("e:%11.3f\n", e);
 #endif
-    if (e == 0){
+    if (e == 0)
+    {
         //センサが一直線に並ぶ時にe=0となる
         //分母がゼロとなり計算できない
 #ifdef  DEBUG_APO_2
@@ -481,7 +526,8 @@ uint8_t apollonius3circleXYR(uint8_t numResult, sensor_data_t* tmp3Sensor){
 #ifdef  DEBUG_APO
         printf("e(st):%11.3f\n", e);
 #endif
-        if (e == 0){
+        if (e == 0)
+        {
             //別公式でもダメな時
             calc_stat = CALC_STATUS_E_ZERO;
             calcValue[numResult].status = calc_stat;
@@ -513,7 +559,8 @@ uint8_t apollonius3circleXYR(uint8_t numResult, sensor_data_t* tmp3Sensor){
         printf("A:%10.6f B:%10.5f C:%10.3f \n", aa, bb, cc);
         printf("Q:%10.3f \n", q);
 #endif    
-        if (q < 0){
+        if (q < 0)
+        {
             //解の公式の条件をみたさない
             calc_stat = CALC_STATUS_QUAD_F;
             calcValue[numResult].status = calc_stat;
@@ -541,22 +588,29 @@ uint8_t apollonius3circleXYR(uint8_t numResult, sensor_data_t* tmp3Sensor){
         printf("x02:%10.5f - hant2:%10.3f \n", x02, hant2);
 #endif
         //絶対値にする
-        if (hant < 0){
+        if (hant < 0)
+        {
             hant = -hant;
         }
-        if (hant2 < 0){
+        if (hant2 < 0)
+        {
             hant2 = -hant2;
         }
-        if (hant < hant2){
+        if (hant < hant2)
+        {
             //小さい方を選択
             x[0] = x01;
-        }else{
+        }
+        else
+        {
             x[0] = x02;
         }
 #ifdef  DEBUG_APO
 #endif
         
-    }else { 
+    }
+    else 
+    { 
         //3つのセンサーが一直線ではなく三角形配置の時
         
         d[1] = (0 - x[1] * x[1] + x[2] * x[2] - y[1] * y[1] + y[2] * y[2] + r[1] * r[1] - r[2] * r[2]) / 2;
@@ -586,7 +640,8 @@ uint8_t apollonius3circleXYR(uint8_t numResult, sensor_data_t* tmp3Sensor){
         printf("Q:%10.3f \n", q);
 #endif    
 
-        if (q < 0){
+        if (q < 0)
+        {
             //解の公式の条件をみたさない
             calc_stat = CALC_STATUS_QUAD_F;
             calcValue[numResult].status = calc_stat;
@@ -603,13 +658,15 @@ uint8_t apollonius3circleXYR(uint8_t numResult, sensor_data_t* tmp3Sensor){
 #ifdef  DEBUG_APO
         printf("r0:%10.3f ", r[0]);
 #endif    
-        if (r[0] < 0){
+        if (r[0] < 0)
+        {
             //半径が負の方は不採用
             r[0] = (-bb + sqrt(q)) / (2 * aa);
 #ifdef  DEBUG_APO
             printf("XXX  -> r0:%10.3f ", r[0]);
 #endif  
-            if (r[0] < 0){
+            if (r[0] < 0)
+            {
                 //2つともゼロ以下
                 calc_stat = CALC_STATUS_R0_UNDER0;
                 calcValue[numResult].status = calc_stat;
@@ -624,7 +681,9 @@ uint8_t apollonius3circleXYR(uint8_t numResult, sensor_data_t* tmp3Sensor){
 #endif  
                 return calc_stat;
             }
-        }else{
+        }
+        else
+        {
 #ifdef  DEBUG_APO
             printf("...OK\n");
 #endif

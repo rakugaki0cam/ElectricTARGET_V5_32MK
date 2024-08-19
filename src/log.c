@@ -21,7 +21,8 @@ log_result_t log_result[LOG_MEM];   //ログ計算結果
 
 
 
-void log_title(void){
+void log_title(void)
+{
     //ログ　固定値　代入
     //センサー位置データ
     log_sensor_data.sensor_num = NUM_SENSOR;
@@ -45,7 +46,8 @@ void log_title(void){
     
 }
 
-void log_data_make(uint16_t shot_count){
+void log_data_make(uint16_t shot_count)
+{
     //ログデータ作成(一発ごと)
     
     //測定値　補正値

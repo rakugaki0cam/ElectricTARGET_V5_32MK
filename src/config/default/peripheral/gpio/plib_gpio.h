@@ -96,6 +96,15 @@
 #define PT1_ESP_Get()               ((PORTG >> 8) & 0x1U)
 #define PT1_ESP_PIN                  GPIO_PIN_RG8
 
+/*** Macros for PT1_INT pin ***/
+#define PT1_INT_Set()               (LATGSET = (1U<<9))
+#define PT1_INT_Clear()             (LATGCLR = (1U<<9))
+#define PT1_INT_Toggle()            (LATGINV= (1U<<9))
+#define PT1_INT_OutputEnable()      (TRISGCLR = (1U<<9))
+#define PT1_INT_InputEnable()       (TRISGSET = (1U<<9))
+#define PT1_INT_Get()               ((PORTG >> 9) & 0x1U)
+#define PT1_INT_PIN                  GPIO_PIN_RG9
+
 /*** Macros for VIDEO_SYNC_IN pin ***/
 #define VIDEO_SYNC_IN_Get()               ((PORTA >> 12) & 0x1U)
 #define VIDEO_SYNC_IN_PIN                  GPIO_PIN_RA12

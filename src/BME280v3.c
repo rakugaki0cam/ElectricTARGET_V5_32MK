@@ -62,7 +62,8 @@ uint32_t    PresU32x100;
 uint32_t    HumiU32x1024;
 
 
-typedef enum{
+typedef enum
+{
     BMP280,
     BME280,
 } bm_type_t;
@@ -92,10 +93,12 @@ int16_t     dig_H5;   //12bit
 int8_t      dig_H6;
 
 
-bool BME280_Reset(void){
+bool BME280_Reset(void)
+{
     //Power on Reset
     
-    if(i2c1_Write1byteRegister(BME280_ID, REG_RESET, DATA_RESET)){
+    if(i2c1_Write1byteRegister(BME280_ID, REG_RESET, DATA_RESET))
+    {
         printf("BME/P280 error!\n");
         return ERROR;
     }
@@ -104,7 +107,8 @@ bool BME280_Reset(void){
 }
 
 
-bool BME280_Init(void){
+bool BME280_Init(void)
+{
     //initialize
     //ret value: 1:error, 0:OK
     
@@ -113,17 +117,20 @@ bool BME280_Init(void){
     uint8_t i2cTxData;
     uint8_t i2cRxData [1] = {0};
     
-    if (BME280_Reset()){
+    if (BME280_Reset())
+    {
         return ERROR;
     }
     //power on reset後はsleep mode
 
     //ID check
-    if (i2c1_Read1byteRegister(BME280_ID, REG_ID_CHECK, i2cRxData)){
+    if (i2c1_Read1byteRegister(BME280_ID, REG_ID_CHECK, i2cRxData))
+    {
         printf("BME/P280 error!\n");
         return ERROR;
     }
-    switch (i2cRxData[0]){
+    switch (i2cRxData[0])
+    {
         case ID_BME280_REP:
             printf("BME280 init ");
             bmeFlag = BME280;
@@ -139,7 +146,8 @@ bool BME280_Init(void){
     }
     
     //補正値読み出し
-    if (BME280_TrimRead()){
+    if (BME280_TrimRead())
+    {
         printf("error!\n");
         return ERROR;
     }
@@ -151,14 +159,17 @@ bool BME280_Init(void){
                                 //(BMP) 110:2000ms, 111:4000ms
     uint8_t filter = 0b011;     //[bit4:2]IIRfilter 000:off, 001:2, 010:4, 011:8, 100:16
     i2cTxData = (uint8_t)((t_sb << 5) + (filter << 2));    
-    if(i2c1_Write1byteRegister(BME280_ID, REG_CONFIG, i2cTxData)){
+    if(i2c1_Write1byteRegister(BME280_ID, REG_CONFIG, i2cTxData))
+    {
         printf("error!\n");
         return ERROR;
     }
     //Oversampling Humid --BME280 only
-    if (BME280 == bmeFlag){
+    if (BME280 == bmeFlag)
+    {
         uint8_t osrs_h = 0b001;     //[bit2:0]OverSampling Hum: 000:skip, 001:x1, 010:x2, 011:x4, 100:x8, 101:x16
-        if (i2c1_Write1byteRegister(BME280_ID, REG_CTRL_HUM, osrs_h)){
+        if (i2c1_Write1byteRegister(BME280_ID, REG_CTRL_HUM, osrs_h))
+        {
             printf("error!\n");
             return ERROR; 
         }
@@ -168,7 +179,8 @@ bool BME280_Init(void){
     uint8_t osrs_p = 0b101;     //[bit4:2]OverSampling Press: 000:skip, 001:x1, 010:x2, 011:x4, 100:x8, 101:x16
     uint8_t mode = 0b11;        //[bit1:0]mode: 00:Sleep, 01:ForceMode, 11:NormalMode
     i2cTxData = (uint8_t)((osrs_t << 5) + (osrs_p << 2) + mode);
-    if(i2c1_Write1byteRegister(BME280_ID, REG_CTRL_MEAS, i2cTxData)){
+    if(i2c1_Write1byteRegister(BME280_ID, REG_CTRL_MEAS, i2cTxData))
+    {
         printf("error!\n");
         return ERROR;
     }
@@ -178,11 +190,13 @@ bool BME280_Init(void){
 }
 
 
-bool BME280_Sleep(void){
+bool BME280_Sleep(void)
+{
     //Sleep
     uint8_t mode = 0b00000000;  //[bit1:0]mode: 00:Sleep
     
-    if(i2c1_Write1byteRegister(BME280_ID, REG_CTRL_MEAS, mode)){
+    if(i2c1_Write1byteRegister(BME280_ID, REG_CTRL_MEAS, mode))
+    {
         printf("error!\n");
         return ERROR;
     }
@@ -191,11 +205,13 @@ bool BME280_Sleep(void){
 }
            
 
-bool BME280_TrimRead(void){
+bool BME280_TrimRead(void)
+{
     //補正値の読み出し
     uint8_t     i2cRxData[24];
             
-    if (i2c1_ReadDataBlock(BME280_ID, TRIM_PARA_ADD1, i2cRxData, 24)){
+    if (i2c1_ReadDataBlock(BME280_ID, TRIM_PARA_ADD1, i2cRxData, 24))
+    {
         printf("error\n");
         return ERROR;
     }
@@ -213,17 +229,20 @@ bool BME280_TrimRead(void){
     dig_P8 = ((int16_t)i2cRxData[21]<< 8) | i2cRxData[20];          //0x9C/0x9D -> dig_P3 [7:0]/[15:8]
     dig_P9 = ((int16_t)i2cRxData[23]<< 8) | i2cRxData[22];          //0x9E/0x9F -> dig_P3 [7:0]/[15:8]
     
-    if (BMP280 == bmeFlag){
+    if (BMP280 == bmeFlag)
+    {
         return OK;
     }
     //Humid BME280only
-    if (i2c1_Read1byteRegister(BME280_ID, TRIM_PARA_ADD2, i2cRxData)){
+    if (i2c1_Read1byteRegister(BME280_ID, TRIM_PARA_ADD2, i2cRxData))
+    {
         printf("error!\n");
         return ERROR;
     }
     dig_H1 = (uint8_t)i2cRxData[0];                                         //0xA1           -> dig_H1 [7:0]
     
-    if (i2c1_ReadDataBlock(BME280_ID, TRIM_PARA_ADD2, i2cRxData, 7)){
+    if (i2c1_ReadDataBlock(BME280_ID, TRIM_PARA_ADD2, i2cRxData, 7))
+    {
         printf("error!\n");
         return ERROR;
     }
@@ -237,7 +256,8 @@ bool BME280_TrimRead(void){
 }
 
 
-uint8_t BME280_ReadoutSM(void){
+uint8_t BME280_ReadoutSM(void)
+{
     //読み出しと表示
     //ret: status
     
@@ -245,7 +265,8 @@ uint8_t BME280_ReadoutSM(void){
     uint8_t     i2cRxData[8];
     uint8_t     rxLen;
     
-    typedef enum {
+    typedef enum 
+    {
         BME_SM_IDLE,
         BME_SM_READ,
         BME_SM_TEMP,
@@ -256,7 +277,8 @@ uint8_t BME280_ReadoutSM(void){
     } bme_status_t;
     static bme_status_t  status = BME_SM_IDLE;
     
-    switch (status){
+    switch (status)
+    {
         case BME_SM_IDLE:
             
         case BME_SM_READ:
@@ -267,7 +289,8 @@ uint8_t BME280_ReadoutSM(void){
                 rxLen = 6;
             }
             //printf("BME read");
-            if(i2c1_ReadDataBlock(BME280_ID, REG_PRESS, i2cRxData, rxLen)){
+            if(i2c1_ReadDataBlock(BME280_ID, REG_PRESS, i2cRxData, rxLen))
+            {
                 printf("error!\n");
                 return ERROR;
             }
@@ -276,7 +299,8 @@ uint8_t BME280_ReadoutSM(void){
             //気圧　気温　湿度　の順
             Pres32AdcData = ((uint32_t)i2cRxData[0] << 12) | ((uint16_t)i2cRxData[1] << 4) | (i2cRxData[2] >> 4);    //型をつけておかないと、ビットシフトした際にちょんぎれている
             Temp32AdcData = ((uint32_t)i2cRxData[3] << 12) | ((uint16_t)i2cRxData[4] << 4) | (i2cRxData[5] >> 4);
-            if (BME280 == bmeFlag){
+            if (BME280 == bmeFlag)
+            {
                 Humi32AdcData = ((uint16_t) i2cRxData[6] << 8 ) | i2cRxData[7];
             }
             status = BME_SM_TEMP;
@@ -306,7 +330,8 @@ uint8_t BME280_ReadoutSM(void){
             
         case BME_SM_HUMID:
             //湿度の計算
-            if (BME280 == bmeFlag){
+            if (BME280 == bmeFlag)
+            {
                 HumiU32x1024 = BME280_CompensateH((int32_t)Humi32AdcData);
                 // /1024 %RH  0~100%RH  (0~102400 = 0x0~0x19000)
 #ifdef DEBUG280_2
@@ -317,7 +342,8 @@ uint8_t BME280_ReadoutSM(void){
             break;
             
         case BME_SM_ESPSEND:
-            if (ESP32slave_SendTempData(TempS32x100)){
+            if (ESP32slave_SendTempData(TempS32x100))
+            {
                 printf("Temp data send error!\n");
             }
             status = BME_SM_IDLE;
@@ -336,7 +362,8 @@ uint8_t BME280_ReadoutSM(void){
 }
 
 
-int32_t BME280_CompensateT(int32_t adc_T){
+int32_t BME280_CompensateT(int32_t adc_T)
+{
     //温度補正計算
     //"5123" = 51.23 deg C
     int32_t     var1, var2, T;
@@ -358,7 +385,8 @@ int32_t BME280_CompensateT(int32_t adc_T){
 */     
 }
 
-uint32_t BME280_CompensateP(int32_t adc_P){
+uint32_t BME280_CompensateP(int32_t adc_P)
+{
     //気圧の補正計算 (t_fineが必要)
     //"96386" = 963.86hPa
     int32_t     var1, var2;
@@ -375,9 +403,11 @@ uint32_t BME280_CompensateP(int32_t adc_P){
         return 000000;
     }    
     p = (((uint32_t)(((int32_t)1048576) - adc_P) - (uint32_t)(var2 >> 12))) * 3125;       //user
-    if (p < 0x80000000){
+    if (p < 0x80000000)
+    {
         p = (p << 1) / ((uint32_t) var1);   
-    } else {
+    } else 
+    {
         p = (p / (uint32_t)var1) * 2;    
     }
     var1 = (((int32_t)dig_P9) * ((int32_t)(((p >> 3) * (p >> 3)) >> 13))) >> 12;
@@ -386,7 +416,8 @@ uint32_t BME280_CompensateP(int32_t adc_P){
     return p;
 }
 
-uint32_t BME280_CompensateH(int32_t adc_H){
+uint32_t BME280_CompensateH(int32_t adc_H)
+{
     //湿度の補正計算 (t_fineが必要)
     //"47445" = 47445/1024 = 46.333%RH
     int32_t     v_x1;
@@ -400,11 +431,13 @@ uint32_t BME280_CompensateH(int32_t adc_H){
    
    // [(条件)? a : b]演算子はコンパイルされないようなのでif文に展開
    //v_x1 = (v_x1 < 0 ? 0 : v_x1);
-   if (v_x1 < 0){
+   if (v_x1 < 0)
+   {
         v_x1 = 0;
    }
    //v_x1 = (v_x1 > 419430400 ? 419430400 : v_x1);
-   if (v_x1 > 419430400){
+   if (v_x1 > 419430400)
+   {
         v_x1 = 419430400;
    }
    

@@ -48,7 +48,8 @@ power_saving_mask_t sleepStat = POWERSAVING_NORMAL;
 bool        mainSwFlag = 0;         //メインスイッチ割込
 
 //***** iP5306 *****************************************************************
-bool ip5306_Init(void){
+bool ip5306_Init(void)
+{
     //I2C iP5306 init
 #define DEBUG5306_no
      
@@ -74,7 +75,8 @@ bool ip5306_Init(void){
 
     //デフォルト値の読み出し
     printf("iP5306 init ");
-    if (i2c1_ReadDataBlock(IP5306_SLAVE_ID, REG_SYS_CTL0, ip5306RxData, 3)){
+    if (i2c1_ReadDataBlock(IP5306_SLAVE_ID, REG_SYS_CTL0, ip5306RxData, 3))
+    {
         printf("error!\n");
         return ERROR;
     }
@@ -88,7 +90,8 @@ bool ip5306_Init(void){
     ip5306TxData[1] = (boostLongPush << 7) + (leddoubleclick << 6) + (shortPushOff << 5) + (usbCutBoost << 2) + lowVoltage;
     ip5306TxData[2] = (longPushTime << 4) + (autoOffTime << 2);
                                         
-    if (i2c1_WriteDataBlock(IP5306_SLAVE_ID, REG_SYS_CTL0, &ip5306TxData[0], 3)){
+    if (i2c1_WriteDataBlock(IP5306_SLAVE_ID, REG_SYS_CTL0, &ip5306TxData[0], 3))
+    {
         printf("error!\n");
         return ERROR;
     }
@@ -97,7 +100,8 @@ bool ip5306_Init(void){
 }
 
 
-bool ip5306_ReadStatus(uint8_t* data){
+bool ip5306_ReadStatus(uint8_t* data)
+{
     //I2C read
     //ret  0:OK, 1:ERROR
     // data[0]  [bit2:0]:Batlevel, [bit3]:u3.2V, [bit4]:u3.0V, [bit5]USBin, [bit6]chargeFull
@@ -109,27 +113,32 @@ bool ip5306_ReadStatus(uint8_t* data){
     uint8_t batPercent = 100;   //%
     bool    usbinFlag = 0;
 
-    if (i2c1_ReadDataBlock(IP5306_SLAVE_ID, REG_READ0, i2cRxData, 2)){
+    if (i2c1_ReadDataBlock(IP5306_SLAVE_ID, REG_READ0, i2cRxData, 2))
+    {
         printf("error!\n");
         return ERROR;
     }
     chargeEnable = i2cRxData[0];
     chargeStatus = i2cRxData[1];
     
-    if (i2c1_ReadDataBlock(IP5306_SLAVE_ID, REG_READ4, i2cRxData, 1)){
+    if (i2c1_ReadDataBlock(IP5306_SLAVE_ID, REG_READ4, i2cRxData, 1))
+    {
         printf("error!\n");
         return ERROR;
     }
     batLevel = i2cRxData[0];
 
     //BAT level 
-    if (batLevel & 0b10000000){
+    if (batLevel & 0b10000000)
+    {
         batPercent = 75;
     }
-    if (batLevel & 0b01000000){
+    if (batLevel & 0b01000000)
+    {
         batPercent = 50;
     }
-    if (batLevel & 0b00100000){
+    if (batLevel & 0b00100000)
+    {
         batPercent = 25;
     }
 #ifdef DEBUG5306_2
@@ -144,17 +153,20 @@ bool ip5306_ReadStatus(uint8_t* data){
     printf("\n");
 #endif
     
-    if (batLevel & 0b00010000){
+    if (batLevel & 0b00010000)
+    {
         printf("batV < 3.2V \n");
         data[0] |= 0b00001000;      //[bit3]
     }
-    if (batLevel & 0b00000010){
+    if (batLevel & 0b00000010)
+    {
         printf("batV < 3.0V \n");
         data[0] |= 0b00010000;      //[bit4] 
     }
 
     //Charge status change
-    if (chargeEnable & 0b00001000){
+    if (chargeEnable & 0b00001000)
+    {
         //USB IN
         data[0] |= 0b00100000;  //[bit5] 
         if (usbinFlag == 0){
@@ -173,23 +185,28 @@ bool ip5306_ReadStatus(uint8_t* data){
         usbinFlag = 0;
     }
 
-    if (usbinFlag == 1){
+    if (usbinFlag == 1)
+    {
         //USB接続
-        if (chargeStatus & 0b00001000){
+        if (chargeStatus & 0b00001000)
+        {
             //充電完了 -> ディープスリープ
 #ifdef DEBUG5306_2
             printf("Full\n");
 #endif
             data[0] |= 0b01000000;  //[bit6] 
             CHARGE_LED_RED_Clear();
-            if (sleepStat == POWERSAVING_SLEEP){
+            if (sleepStat == POWERSAVING_SLEEP)
+            {
                 sleepStat = POWERSAVING_DEEPSLEEP;
                 deepSleep();
                 //------------- DEEP SLEEP -------------------------------------
             
                 //awake
             }
-        }else{
+        }
+        else
+        {
             //充電中
 #ifdef DEBUG5306_2
             printf("CHARGE\n");
@@ -203,7 +220,8 @@ bool ip5306_ReadStatus(uint8_t* data){
 
 //**** battery *****************************************************************
 
-float batteryVolt(bool init){
+float batteryVolt(bool init)
+{
     //バッテリ電圧計測する
     //init  1:初回　平均値用にサンプル数回読込
     //      0:通常
@@ -222,9 +240,11 @@ float batteryVolt(bool init){
     uint8_t             i;
     
     //init
-    if (init == true){
+    if (init == true)
+    {
         //平均用データ配列を埋める
-        for(i = 0; i < SAMPLES; i++){
+        for(i = 0; i < SAMPLES; i++)
+        {
             batVdata[i] = batteryAdcGet();  
         }
         return 0;
@@ -235,11 +255,13 @@ float batteryVolt(bool init){
     //printf("%1d:%03x ", ring_cnt, batv[ring_cnt]);
 
     ringCount ++;
-    if (ringCount >= SAMPLES){
+    if (ringCount >= SAMPLES)
+    {
         ringCount = 0;
     }
     batVSum = 0;
-    for(i = 0; i < SAMPLES; i++){
+    for(i = 0; i < SAMPLES; i++)
+    {
         batVSum += batVdata[i];
     }
     
@@ -249,12 +271,14 @@ float batteryVolt(bool init){
 }
 
 
-uint16_t batteryAdcGet(void){
+uint16_t batteryAdcGet(void)
+{
     //バッテリー電圧　12ビットAD変換値を読む
 #define     ADCH_VBAT   ADCHS_CH19  //ピン4 チャンネル19 
 
     ADCHS_ChannelConversionStart(ADCH_VBAT);
-    while(!ADCHS_ChannelResultIsReady(ADCH_VBAT)){
+    while(!ADCHS_ChannelResultIsReady(ADCH_VBAT))
+    {
         //wait
     }
     return ADCHS_ChannelResultGet(ADCH_VBAT); 
@@ -263,35 +287,42 @@ uint16_t batteryAdcGet(void){
 
 //***** main switch ************************************************************
 
-void mainSwOn_callback(EXTERNAL_INT_PIN pin, uintptr_t context){
+void mainSwOn_callback(EXTERNAL_INT_PIN pin, uintptr_t context)
+{
     //メインスイッチ
     mainSwFlag = 1;
 }
 
 
-void mainSwPush(void){
+void mainSwPush(void)
+{
     //メインスイッチ
     uint8_t     sleep_sw_timer = 0;
     
-    if (!mainSwFlag){
+    if (!mainSwFlag)
+    {
         return;
     }
     mainSwFlag = 0;
     
     CORETIMER_DelayMs(10);
     //チャタリング対策
-    if(MAIN_SW_PUSH()){
+    if(MAIN_SW_PUSH())
+    {
         printf("mainSW ON\n");
-        if (POWERSAVING_NORMAL == sleepStat){
+        if (POWERSAVING_NORMAL == sleepStat)
+        {
             //スリープ中でない時は長押し判定
             //充電中の長押しでみせかけのスリープ状態にする
             sleep_sw_timer = 0;
-            while(MAIN_SW_PUSH()){
+            while(MAIN_SW_PUSH())
+            {
                 //長押し中
                 CORETIMER_DelayMs(100);
                 printf(".");
                 sleep_sw_timer++;
-                if (sleep_sw_timer > 30){   //3秒
+                if (sleep_sw_timer > 30)
+                {   //3秒
                     espSleep();             //PIC以外オフの擬似スリープ状態へ
                     CORETIMER_DelayMs(5000);   
                     break;
@@ -300,7 +331,9 @@ void mainSwPush(void){
             printf("\n");
             CORETIMER_DelayMs(100);   
             
-        }else{
+        }
+        else
+        {
             //スリープ、ディープスリープ中ならリセットし再起動
             resetRestart();
         }
@@ -310,7 +343,8 @@ void mainSwPush(void){
 
 //--- SLEEP -----
 
-void espSleep(void){
+void espSleep(void)
+{
     //PICの充電チェック以外をオフ
     sleepStat = POWERSAVING_SLEEP;
     BME280_Sleep();                     //BME280スリープ
@@ -333,7 +367,8 @@ void espSleep(void){
 }
 
     
-void deepSleep(void){
+void deepSleep(void)
+{
     //充電完了時のほとんどオフ状態
     sleepStat = POWERSAVING_DEEPSLEEP;
     LED_BLUE_Clear();
@@ -354,7 +389,8 @@ void deepSleep(void){
 
 
 //--- RESET -----
-void resetRestart(void){
+void resetRestart(void)
+{
     ESP_POWER_Clear();          //ESP32 5V LoadSwitchオフ espSleep中の場合、起きないので一度電源を切る
     CORETIMER_DelayMs(200);
     printf("\n");
