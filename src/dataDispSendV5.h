@@ -15,7 +15,8 @@
 
 
 //画面表示モード
-typedef enum {
+typedef enum 
+{
     NONE,                   //出力なし
     SINGLE_LINE,            //画面表示:1行/1発
     MEAS_CALC,              //測定値と計算結果まとめ

@@ -66,7 +66,8 @@ extern uint8_t      sensorCnt;          //センサ入力順番のカウント
 extern uint16_t     ringPos;            //ログデータポインタ
 extern float        targetY0Offset;     //ターゲットYオフセット
 
-typedef enum {
+typedef enum 
+{
     WIRED_LAN,     
     WIRELESS_WIFI,
     UNKNOWN,
@@ -74,6 +75,7 @@ typedef enum {
 extern volatile pt1con_sor_t pt1ConnectIs;         //PT1..0:有線接続, 1:無線接続
 
 extern debugger_mode_sour_t    debuggerMode;    //DEBUGger表示モード
+
 
 //DEBUGger printf
 //計算過程のデバッグ表示
