@@ -25,14 +25,16 @@ static  uint8_t portRegister = IO_SETTING;
 
 
 
-bool    PCF8574_Init(void){
+bool    PCF8574_Init(void)
+{
     //initialize
     //ret value: 1:error, 0:OK
     
     //input port set
     printf("PCF8574 init ");
 
-    if (i2c1_WriteRegister(PCF8574_ID, IO_SETTING)){
+    if (i2c1_WriteRegister(PCF8574_ID, IO_SETTING))
+    {
         printf("error!\n");
         return ERROR;
     }
@@ -43,11 +45,13 @@ bool    PCF8574_Init(void){
     
 
 //
-void    ledLightOn(port_name_t color){
+void    ledLightOn(port_name_t color)
+{
     //LEDをオン
     //複数一度にやりたい時はorで並べる
     uint8_t tmp;
-    if (NO_OUTPUT == color){
+    if (NO_OUTPUT == color)
+    {
         //何もオンしない時
         return;
     }
@@ -58,10 +62,12 @@ void    ledLightOn(port_name_t color){
 }
 
 
-void    ledLightOff(port_name_t color){
+void    ledLightOff(port_name_t color)
+{
     //LEDをオフ
     uint8_t tmp;
-    if (NO_OUTPUT == color){
+    if (NO_OUTPUT == color)
+    {
         //何もオフしない時
         return;
     }

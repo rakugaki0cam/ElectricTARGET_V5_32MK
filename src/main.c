@@ -249,7 +249,7 @@ int main ( void )
     while ( true )
     {
         //Maintain state machines of all polled MPLAB Harmony modules.
-        SYS_Tasks ( );
+        SYS_Tasks();
         
         impact();   //着弾処理
 
@@ -264,10 +264,9 @@ int main ( void )
             
         if (pt1_Flag)
         {
-            printf("PT1 ON\n");
-            //printfの文字列を長くしてもパルス幅は変わらないみたい
-            //パルス幅　約20usec
             PT1_INT_Set();  //PT1_INTをハイ(idle)に
+            printf("PT1 ON\n");            
+            //printfの文字列を長くしてもパルス幅は変わらないみたい
             pt1_Flag = 0;
         }
         
@@ -304,7 +303,7 @@ void impact(void)
     
     //着弾
     LED_BLUE_Set();
-    PT1_INT_Set();          //PT1_INTをハイ(idle)に
+    PT1_INT_Set();          //PT1_INTをハイ(idle)にもどす
    
     //測定完了待ち
     cnt = 80;
