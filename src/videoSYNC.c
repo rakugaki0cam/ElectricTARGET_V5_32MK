@@ -145,7 +145,7 @@ void pwm_test(void)
     
     while(1)
     {
-        if (PT1_Get())
+        if (PT1_WIRED_Get())
         {
             CORETIMER_DelayMs(5);
             //ƒ`ƒƒƒ^ƒŠƒ“ƒO
