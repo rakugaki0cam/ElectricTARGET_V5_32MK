@@ -17,7 +17,6 @@ typedef enum
     POWERSAVING_DEEPSLEEP,
     POWERSAVING_NUM        
 } power_saving_mask_t;
-
 extern power_saving_mask_t sleepStat;
 
 

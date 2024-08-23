@@ -26,7 +26,8 @@
 //GLOBAL
 const float   delay_a = (5.0 / 300);        //コンパレータオンの遅れ時間の計算係数 usec / mm
 const float   delay_b = 10;                 //usec
-sensor_data_t   sensor5Measure[NUM_SENSOR]= {
+sensor_data_t   sensor5Measure[NUM_SENSOR]= 
+{
     {SENSOR1, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},  //左下
     {SENSOR2, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},  //右下
     {SENSOR3, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},  //左上
@@ -36,7 +37,8 @@ sensor_data_t   sensor5Measure[NUM_SENSOR]= {
 
 
 //LOCAL
-typedef enum {
+typedef enum 
+{
     INPUT_ORDER_STATUS_OK,
     INPUT_ORDER_STATUS_NO_INPUT,
     INPUT_ORDER_STATUS_FIXED,       
@@ -45,7 +47,8 @@ typedef enum {
 } input_order_stat_sor_t;
 
 
-void measureInit(void){
+void measureInit(void)
+{
     //初期設定
     float       center_offset_x = 0.0;     //LCDセンターとセンサー配置のズレ
     float       center_offset_y = 0.0;
@@ -59,7 +62,8 @@ void measureInit(void){
 }
 
 
-void    correctSensorOffset(float center_dx, float center_dy){
+void    correctSensorOffset(float center_dx, float center_dy)
+{
     //マト板のセンターラインとセンサー位置のズレを補正
     //センサーの物理位置のズレ補正
     float   sensor1_offset_x = 0;
@@ -102,7 +106,8 @@ void    correctSensorOffset(float center_dx, float center_dy){
 
 
 
-uint8_t measureMain(uint16_t shotCnt){
+uint8_t measureMain(uint16_t shotCnt)
+{
     //測定メイン～計算
     //shotCnt:ショット番号
     meas_stat_sor_t     measStat = MEASURE_STATUS_OK;
@@ -111,7 +116,8 @@ uint8_t measureMain(uint16_t shotCnt){
     //測定データ順を確認修正
     checkInputOrder();
     //測定データを計算、代入
-    if (assignMeasureData() < 3){
+    if (assignMeasureData() < 3)
+    {
         //測定数が足りない時(計算には3個以上のデータが必要)
         calcStat = CALC_STATUS_NOT_ENOUGH;
         resultError999(NUM_CAL, calcStat);
@@ -127,11 +133,14 @@ uint8_t measureMain(uint16_t shotCnt){
     calcStat = computeEpicenter();
     //printf("calc status:%d", ans);    
     
-    if (CALC_STATUS_OK == calcStat){       
+    if (CALC_STATUS_OK == calcStat)
+    {       
         //測定OK
         ledLightOn(LED_BLUE);
         
-    }else{
+    }
+    else
+    {
         //エラーの時
         measStat = MEASURE_STATUS_ERROR;
         ledLightOn(LED_CAUTION);
@@ -143,7 +152,8 @@ uint8_t measureMain(uint16_t shotCnt){
 
 
 //
-uint8_t checkInputOrder(void){
+uint8_t checkInputOrder(void)
+{
     //入力順序の再確認修正
     //入力時間が近い場合に割込処理順が入れ替わることがある...複数の保留割込がある場合、処理順はIRQ#順になるため
     input_order_stat_sor_t status = INPUT_ORDER_STATUS_OK;
@@ -151,18 +161,22 @@ uint8_t checkInputOrder(void){
     uint8_t     sensor_number;             
     uint8_t     input_order[NUM_SENSOR];      //入力順計算結果
     
-    for (sensor_number = 0; sensor_number < NUM_SENSOR; sensor_number++){
+    for (sensor_number = 0; sensor_number < NUM_SENSOR; sensor_number++)
+    {
         input_order[sensor_number] = 0;
         
-        for (i = 0; i < NUM_SENSOR; i++){
-            if (sensor5Measure[sensor_number].timer_cnt > sensor5Measure[i].timer_cnt){
+        for (i = 0; i < NUM_SENSOR; i++)
+        {
+            if (sensor5Measure[sensor_number].timer_cnt > sensor5Measure[i].timer_cnt)
+            {
                 //自分の値より小さい値があった時カウントする
                 input_order[sensor_number]++;
                 //同じ値があった時は同着ができてしまう......未処理////////////////////
             }
         }
         
-        if (sensor5Measure[sensor_number].input_order == 0xff){
+        if (sensor5Measure[sensor_number].input_order == 0xff)
+        {
             //未検出センサは未検出のまま
 #ifdef DEBUG_MEAS
             printf("Sensor%d is NO input!\n", (sensor_number + 1));   
@@ -170,7 +184,9 @@ uint8_t checkInputOrder(void){
             status = INPUT_ORDER_STATUS_NO_INPUT;
             ledLightOn(LED_CAUTION);
             
-        }else if (sensor5Measure[sensor_number].input_order != input_order[sensor_number]){
+        }
+        else if (sensor5Measure[sensor_number].input_order != input_order[sensor_number])
+        {
             //修正があった場合
 #ifdef DEBUG_MEAS
             printf("(S%d) input Order (%d -> %d) is changed correctly!\n", sensor_number, sensor5Measure[sensor_number].input_order, input_order[sensor_number]);
@@ -185,7 +201,8 @@ uint8_t checkInputOrder(void){
 }
 
 
-uint8_t assignMeasureData(void){
+uint8_t assignMeasureData(void)
+{
     //測定データを代入
     //出力: 有効測定センサー数
     meas_stat_sor_t   sensorStat = SENSOR_STATUS_OK;
@@ -193,8 +210,10 @@ uint8_t assignMeasureData(void){
     uint8_t     firstSensor = 0;        //最初にオンしたセンサーの番号
     uint8_t     validSensorCount = 0;   //有効測定センサー数のカウント
     
-    for (SensNum = 0; SensNum < NUM_SENSOR; SensNum++){
-        switch(sensor5Measure[SensNum].input_order){
+    for (SensNum = 0; SensNum < NUM_SENSOR; SensNum++)
+    {
+        switch(sensor5Measure[SensNum].input_order)
+        {
             case 0:
                 //最初にオンしたセンサー番号
                 firstSensor = SensNum;
@@ -218,8 +237,10 @@ uint8_t assignMeasureData(void){
     }
     
     //タイマカウント差、時間差、距離の計算と代入
-    for (SensNum = 0; SensNum < NUM_SENSOR; SensNum++){
-        if (SENSOR_STATUS_OK == sensor5Measure[SensNum].status){
+    for (SensNum = 0; SensNum < NUM_SENSOR; SensNum++)
+    {
+        if (SENSOR_STATUS_OK == sensor5Measure[SensNum].status)
+        {
             //ステータスOKのときだけ計算、代入
             sensor5Measure[SensNum].delay_cnt       = sensor5Measure[SensNum].timer_cnt - sensor5Measure[firstSensor].timer_cnt;                         //カウント差
             sensor5Measure[SensNum].delay_time_usec = delay_time_usec(sensor5Measure[SensNum].delay_cnt);                                               //カウント値→時間
@@ -233,14 +254,16 @@ uint8_t assignMeasureData(void){
 
 
 //
-void clearData(void){
+void clearData(void)
+{
     //測定データをクリア
     uint8_t i;
     
     sensorCnt = 0;
     
     //測定値クリア
-    for (i = 0; i < NUM_SENSOR; i++){
+    for (i = 0; i < NUM_SENSOR; i++)
+    {
         sensor5Measure[i].input_order = 0xff;      //未入力判定用に0ではなくて0xff
         sensor5Measure[i].timer_cnt = 0xffffffff;  //タイム順を見る時のために最大の値にしておく
         sensor5Measure[i].delay_cnt = 0;
@@ -268,25 +291,29 @@ void clearData(void){
 
 //*****time *******
 
-float   dist_delay_mm(float time_usec){
+float   dist_delay_mm(float time_usec)
+{
     //時間を音速から距離に計算
     return  time_usec * v_air_mps() / 1000;
 }
 
 
-float   v_air_mps(void){
+float   v_air_mps(void)
+{
     //音速m/secを求める 
     return 331.5 + 0.61 * air_temp_degree_c;
 }
 
 
-float   delay_time_usec(uint32_t timer_count){
+float   delay_time_usec(uint32_t timer_count)
+{
     //タイマーカウント値を実時間usecに変換
     return (float)timer_count / (TMR2_FrequencyGet() / 1000000);
 }
 
 
-float   delay_comparator_usec(float delay_time){
+float   delay_comparator_usec(float delay_time)
+{
     //コンパレータ応答遅れ時間　ー　距離によって音が小さくなり遅れる
     //センサーが音を拾ってからコンパレータがオンするまでの遅れ時間usec
     //delay_time:着弾～センサオンまでの時間で代用。簡略化
@@ -305,7 +332,8 @@ float   delay_comparator_usec(float delay_time){
 }
 
 
-float   impact_time_msec(float r0_mm){
+float   impact_time_msec(float r0_mm)
+{
     //r0から着弾時刻を推定計算
     //着弾時刻は最初のセンサオンより前の時刻
     //塩ビ板t2の中を伝わる時間(表に玉が当たり、裏面に伝わる時間)
@@ -322,7 +350,8 @@ float   impact_time_msec(float r0_mm){
 
 //***** sensor interrupt ********************************************************
 
-void detectSensor1(uintptr_t context){
+void detectSensor1(uintptr_t context)
+{
     //センサ1割込
     impact_PT4_On();                                               //判定不要：最初のセンサオンでセットされるので2つ目以降のセンサで再セットされてもとくに影響は無い
     sensor5Measure[SENSOR1].timer_cnt = ICAP1_CaptureBufferRead();   //読み出しをしないと割込フラグをクリアできず、再割込が入ってしまう
@@ -332,7 +361,8 @@ void detectSensor1(uintptr_t context){
 }
 
 
-void detectSensor2(uintptr_t context){
+void detectSensor2(uintptr_t context)
+{
     //センサ2割込
     impact_PT4_On();
     sensor5Measure[SENSOR2].timer_cnt = ICAP2_CaptureBufferRead();
@@ -342,7 +372,8 @@ void detectSensor2(uintptr_t context){
 }
 
 
-void detectSensor3(uintptr_t context){
+void detectSensor3(uintptr_t context)
+{
     //センサ3割込
     impact_PT4_On();
     sensor5Measure[SENSOR3].timer_cnt = ICAP3_CaptureBufferRead();
@@ -352,7 +383,8 @@ void detectSensor3(uintptr_t context){
 }
 
 
-void detectSensor4(uintptr_t context){
+void detectSensor4(uintptr_t context)
+{
     //センサ4割込
     impact_PT4_On();
     sensor5Measure[SENSOR4].timer_cnt = ICAP4_CaptureBufferRead();
@@ -362,7 +394,8 @@ void detectSensor4(uintptr_t context){
 }
 
 
-void detectSensor5(uintptr_t context){
+void detectSensor5(uintptr_t context)
+{
     //センサ5割込
     impact_PT4_On();
     sensor5Measure[SENSOR5].timer_cnt = ICAP5_CaptureBufferRead();

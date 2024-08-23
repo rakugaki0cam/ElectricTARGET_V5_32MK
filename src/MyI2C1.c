@@ -17,7 +17,8 @@
 bool    i2c1Complete = false;
 
 
-void    MyI2CCallback(uintptr_t context){
+void    MyI2CCallback(uintptr_t context)
+{
     //This function will be called when the transfer completes. Note
     //that this functioin executes in the context of the I2C interrupt.
 
@@ -26,7 +27,8 @@ void    MyI2CCallback(uintptr_t context){
 }
 
 
-bool    i2c1_Write1byteRegister(uint8_t i2cId, uint8_t reg, uint8_t data){
+bool    i2c1_Write1byteRegister(uint8_t i2cId, uint8_t reg, uint8_t data)
+{
     //レジスタにデータを1バイト書き込む
     //i2cId: I2C device ID (7bit)
     //reg:  register address
@@ -38,17 +40,20 @@ bool    i2c1_Write1byteRegister(uint8_t i2cId, uint8_t reg, uint8_t data){
     
     txData[0] = reg;
     txData[1] = data;
-    if (i2c1_BusCheck()){
+    if (i2c1_BusCheck())
+    {
         printf("I2C bus error!\n");
         return ERROR;
     }
     i2c1Complete = false;
-    if (!I2C1_Write(i2cId, &txData[0], 2)){
+    if (!I2C1_Write(i2cId, &txData[0], 2))
+    {
         printf("I2C write error!\n");
         return ERROR;
     }
     //
-    if (i2c1_Wait()){
+    if (i2c1_Wait())
+    {
         //printf("error!\n");
         return ERROR;
     }
@@ -59,7 +64,8 @@ bool    i2c1_Write1byteRegister(uint8_t i2cId, uint8_t reg, uint8_t data){
 }
 
 
-bool    i2c1_WriteDataBlock(uint8_t i2cId, uint8_t reg, uint8_t* tmp, uint8_t len){
+bool    i2c1_WriteDataBlock(uint8_t i2cId, uint8_t reg, uint8_t* tmp, uint8_t len)
+{
     //レジスタのデータをつづけて書き込む
     //i2cId: I2C device ID (7bit)
     //reg:  register address
@@ -73,26 +79,31 @@ bool    i2c1_WriteDataBlock(uint8_t i2cId, uint8_t reg, uint8_t* tmp, uint8_t le
     uint8_t i;
     
     txData[0] = reg;
-    for (i = 0;i < len; i++){
+    for (i = 0;i < len; i++)
+    {
         txData[i + 1] = tmp[i];
     }
-    if (i2c1_BusCheck()){
+    if (i2c1_BusCheck())
+    {
         printf("I2C bus error!\n");
         return ERROR;
     }
     i2c1Complete = false;
-    if (!I2C1_Write(i2cId, &txData[0], (len + 1))){
+    if (!I2C1_Write(i2cId, &txData[0], (len + 1)))
+    {
         printf("I2C write error!\n");
         return ERROR;
     }
     //
-    if (i2c1_Wait()){
+    if (i2c1_Wait())
+    {
         //printf("error!\n");
         return ERROR;
     }
 #ifdef DEBUGI2C2
     printf("I2C 0x%02X (0x%02X)-", i2cId, txData[0]);
-    for (i = 1; i <= len; i++){
+    for (i = 1; i <= len; i++)
+    {
         printf(" %02x", txData[i]);
     }
     printf("\n");
@@ -101,7 +112,8 @@ bool    i2c1_WriteDataBlock(uint8_t i2cId, uint8_t reg, uint8_t* tmp, uint8_t le
 }
 
 
-bool    i2c1_Read1byteRegister(uint8_t i2cId, uint8_t reg, uint8_t* rxData){
+bool    i2c1_Read1byteRegister(uint8_t i2cId, uint8_t reg, uint8_t* rxData)
+{
     //レジスタのデータを1バイト読み出す
     //i2cId: I2C device ID (7bit)
     //reg:  register address
@@ -114,17 +126,20 @@ bool    i2c1_Read1byteRegister(uint8_t i2cId, uint8_t reg, uint8_t* rxData){
     txData[0] = reg;
     rxData[0] = 0;          ////////////////////////////////////////////////////////////clear
     
-    if (i2c1_BusCheck()){
+    if (i2c1_BusCheck())
+    {
         printf("I2C bus error!\n");
         return ERROR;
     }
     i2c1Complete = false;
-    if (!I2C1_WriteRead(i2cId, &txData[0], 1, rxData, 1)){
+    if (!I2C1_WriteRead(i2cId, &txData[0], 1, rxData, 1))
+    {
         printf("I2C write read error!\n");
         return ERROR;
     }
     //
-    if (i2c1_Wait()){
+    if (i2c1_Wait())
+    {
         //printf("error!\n");
         return ERROR;
     }
@@ -135,7 +150,8 @@ bool    i2c1_Read1byteRegister(uint8_t i2cId, uint8_t reg, uint8_t* rxData){
 }
 
 
-bool    i2c1_ReadDataBlock(uint8_t i2cId, uint8_t reg, uint8_t* rxData, uint8_t len){
+bool    i2c1_ReadDataBlock(uint8_t i2cId, uint8_t reg, uint8_t* rxData, uint8_t len)
+{
     //レジスタのデータをつづけて読み出す
     //i2cId: I2C device ID (7bit)
     //reg:  register address
@@ -149,21 +165,25 @@ bool    i2c1_ReadDataBlock(uint8_t i2cId, uint8_t reg, uint8_t* rxData, uint8_t 
     uint8_t i;
     
     txData[0] = reg;
-    for(i = 0; i < len; i++){/////////////////////////////////////////////////////////////clear
+    for(i = 0; i < len; i++)
+    {/////////////////////////////////////////////////////////////clear
         rxData[i] = 0;
     }
     
-    if (i2c1_BusCheck()){
+    if (i2c1_BusCheck())
+    {
         printf("I2C bus error!\n");
         return ERROR;
     }
     i2c1Complete = false;
-    if (!I2C1_WriteRead(i2cId, &txData[0], 1, rxData, len)){
+    if (!I2C1_WriteRead(i2cId, &txData[0], 1, rxData, len))
+    {
         printf("I2C write read error!\n");
         return ERROR;
     }
     //
-    if (i2c1_Wait()){
+    if (i2c1_Wait())
+    {
         //printf("error!\n");
         return ERROR;
     }
@@ -181,7 +201,8 @@ bool    i2c1_ReadDataBlock(uint8_t i2cId, uint8_t reg, uint8_t* rxData, uint8_t 
 //PCF8574
 //レジスタは一つのみなのでレジスタアドレスがない
 
-bool    i2c1_WriteRegister(uint8_t i2cId, uint8_t portReg){
+bool    i2c1_WriteRegister(uint8_t i2cId, uint8_t portReg)
+{
     //レジスタ書き込みなし
     //port Write
 #define DEBUGPCF8574_1_no
@@ -190,17 +211,20 @@ bool    i2c1_WriteRegister(uint8_t i2cId, uint8_t portReg){
     
     txData[0] = portReg;
         
-    if (i2c1_BusCheck()){
+    if (i2c1_BusCheck())
+    {
         printf("I2C bus error!\n");
         return ERROR;
     }
     i2c1Complete = false;
-    if (!I2C1_Write(i2cId, txData, 1)){
+    if (!I2C1_Write(i2cId, txData, 1))
+    {
         printf("I2C write error!\n");
         return ERROR;
     }
     //
-    if (i2c1_Wait()){
+    if (i2c1_Wait())
+    {
         //printf("error!\n");
         return ERROR;
     }
@@ -213,24 +237,28 @@ bool    i2c1_WriteRegister(uint8_t i2cId, uint8_t portReg){
 
 
 //レジスタ書き込みなし
-bool    i2ci_ReadRegister(uint8_t i2cId, uint8_t* rxData){
+bool    i2ci_ReadRegister(uint8_t i2cId, uint8_t* rxData)
+{
     //レジスタ書き込みなし
     //port Read
     //ret   rxData
 #define DEBUGPCF8574A_2_no
             
     rxData[0] = 0;                  //////////////////////////////////////////////clear
-    if (i2c1_BusCheck()){
+    if (i2c1_BusCheck())
+    {
         printf("I2C bus error!\n");
         return ERROR;
     }
     i2c1Complete = false;
-    if (!I2C1_Read(i2cId, rxData, 1)){
+    if (!I2C1_Read(i2cId, rxData, 1))
+    {
         printf("I2C write error!\n");
         return ERROR;
     }
     //
-    if (i2c1_Wait()){
+    if (i2c1_Wait())
+    {
         //printf("error!\n");
         return ERROR;
     }
@@ -244,7 +272,8 @@ bool    i2ci_ReadRegister(uint8_t i2cId, uint8_t* rxData){
 
 
 //ESP32slave
-bool    i2c1_ESP32ReadDataBlock(uint8_t i2cId, uint8_t reg, uint8_t* rxData, uint8_t len){
+bool    i2c1_ESP32ReadDataBlock(uint8_t i2cId, uint8_t reg, uint8_t* rxData, uint8_t len)
+{
     //レジスタのデータをつづけて読み出す
     //**** ESP32スレーブ向け *****
     //     WriteReadだと最初のレジスタが取り込めないようなので
@@ -259,36 +288,43 @@ bool    i2c1_ESP32ReadDataBlock(uint8_t i2cId, uint8_t reg, uint8_t* rxData, uin
     uint8_t txData[1];
     uint8_t i;
     
-    for(i = 0; i < len; i++){               //////////////////////////////////////////clear
+    for(i = 0; i < len; i++) //////////////////////////////////////////clear
+    {              
         rxData[i] = 0;
     }
     
     txData[0] = reg;
-    if (i2c1_BusCheck()){
+    if (i2c1_BusCheck())
+    {
         printf("I2C bus error!\n");
         return ERROR;
     }
     i2c1Complete = false;
-    if(!I2C1_Write(i2cId, &txData[0], 1)){
+    if(!I2C1_Write(i2cId, &txData[0], 1))
+    {
         printf("I2C write error!\n");
         return ERROR;
     }
-    if (i2c1_Wait()){
+    if (i2c1_Wait())
+    {
         //printf("error!\n");
         return ERROR;
     }
     //一度終了。間にストップコンディションが入る。    
-    if (i2c1_BusCheck()){
+    if (i2c1_BusCheck())
+    {
         printf("I2C bus error!\n");
         return ERROR;
     }
     i2c1Complete = false;
-    if(!I2C1_Read(i2cId, rxData, len)){
+    if(!I2C1_Read(i2cId, rxData, len))
+    {
         printf("I2C read error!\n");
         return ERROR;
     }
     //
-    if (i2c1_Wait()){
+    if (i2c1_Wait())
+    {
         //printf("error!\n");
         return ERROR;
     }
@@ -305,14 +341,17 @@ bool    i2c1_ESP32ReadDataBlock(uint8_t i2cId, uint8_t reg, uint8_t* rxData, uin
 
 
 //
-bool    i2c1_BusCheck(void){
+bool    i2c1_BusCheck(void)
+{
     //bus idle check
     uint16_t    cnt = 60000;
     
-    while(I2C1_IsBusy( )){
+    while(I2C1_IsBusy( ))
+    {
         //wait for the current transfer to complete
         cnt--;
-        if (cnt <= 0){
+        if (cnt <= 0)
+        {
             //bus busy
             printf("bus busy\n");
             return ERROR;
@@ -322,7 +361,8 @@ bool    i2c1_BusCheck(void){
 }
 
 
-bool    i2c1_Wait(void){
+bool    i2c1_Wait(void)
+{
     //i2c1 ノンブロックのステートマシンの処理が終了するのを待つ
     // 処理完了でコールバックへ割り込みが入る -> i2cComplete がtrueになる
     //返り値 0:OK, 1:error or time over
@@ -330,7 +370,8 @@ bool    i2c1_Wait(void){
     
     uint16_t    cnt = 40000;
 
-    while(!i2c1Complete){
+    while(!i2c1Complete)
+    {
         cnt--;
         if (cnt <= 0){
             printf("I2C timeout!");
@@ -345,7 +386,8 @@ bool    i2c1_Wait(void){
 }
 
 
- bool   i2c1_Error(i2c_error_report_t report){
+ bool   i2c1_Error(i2c_error_report_t report)
+ {
     //error handling
     //report 0:normal error check
     //ret val 0:OK, 1:error
@@ -354,13 +396,15 @@ bool    i2c1_Wait(void){
     static uint16_t nackErrCnt = 0;
     static uint16_t busErrCnt = 0;
     
-    if (I2C1ERR_REPORT == report){
+    if (I2C1ERR_REPORT == report)
+    {
         printf("I2C err total %d\n", i2cErrCnt);
         printf("I2C NACK err  %d\n", nackErrCnt);
         printf("I2C bus err   %d\n", busErrCnt);
         return OK;
     }
-    if (I2C1ERR_CLEAR == report){
+    if (I2C1ERR_CLEAR == report)
+    {
         i2cErrCnt = 0;
         nackErrCnt = 0;
         busErrCnt = 0;
@@ -370,7 +414,8 @@ bool    i2c1_Wait(void){
     
     i2cErrCnt++;
     while(I2C1_IsBusy());  //wait for the current transfer to complete
-    switch(I2C1_ErrorGet()){
+    switch(I2C1_ErrorGet())
+    {
         case I2C_ERROR_NONE:
             return OK;
             break;
@@ -384,6 +429,7 @@ bool    i2c1_Wait(void){
             break;
     }
     I2C1_TransferAbort();       //必要みたい
+    
     return ERROR;
 }
 

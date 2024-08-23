@@ -23,7 +23,8 @@
 #define LOG_MEM 200             //ログメモリ確保
 
 //固定値
-typedef struct {
+typedef struct 
+{
     uint8_t     sensor_num;      //センサ数 = 5
     float       sensor_x1;       //センサ座標
     float       sensor_y1;
@@ -45,7 +46,8 @@ typedef struct {
 } log_fixed_t;
 
 //測定&補正
-typedef struct {
+typedef struct 
+{
     uint8_t     shot_num;           //玉番号
     uint8_t     input_order;        //センサデータ入力順序     
     float       delay_time1;        //到達時間差測定値
@@ -67,7 +69,8 @@ typedef struct {
 } log_calc_t;
 
 //結果
-typedef struct {
+typedef struct 
+{
     uint8_t     shot_num;       //玉番号
     float       impact_pos_x;   //着弾座標
     float       impact_pos_y;

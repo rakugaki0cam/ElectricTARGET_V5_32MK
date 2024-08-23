@@ -245,10 +245,10 @@ int main ( void )
     pt1_Flag = 0;
     
 //**** MAIN LOOP ********************************************** 
-    while ( true )
+    while (true)
     {
         //Maintain state machines of all polled MPLAB Harmony modules.
-        SYS_Tasks ( );
+        SYS_Tasks();
         
         impact();   //着弾処理
 
@@ -264,7 +264,6 @@ int main ( void )
         if (pt1_Flag)
         {
             printf("PT1 ON\n");
-            //printfの文字列を長くしてもパルス幅は変わらないみたい
             pt1_Flag = 0;
         }
         
@@ -279,7 +278,7 @@ int main ( void )
         
     }
     /* Execution should not come here during normal operation */
-    return ( EXIT_FAILURE );
+    return (EXIT_FAILURE);
     
 }
 
@@ -419,8 +418,8 @@ void pt1ConnectCheck(void)
 
     if (PT1_WIRED_Get() == WIRED)
     {    
-        if (pt1ConnectIs == WIRELESS_WIFI)
-        { //前の状態と比較
+        if (pt1ConnectIs == WIRELESS_WIFI)  //前の状態と比較
+        { 
             pt1ConnectIs = WIRED_LAN;
             VIDEO_SYNC_Wired();
             ESP32slave_SendPT1Connect((uint8_t)pt1ConnectIs);   //LCDへの表示
@@ -429,8 +428,8 @@ void pt1ConnectCheck(void)
     }
     else
     {
-        if (pt1ConnectIs == WIRED_LAN)
-        { //前の状態と比較
+        if (pt1ConnectIs == WIRED_LAN)  //前の状態と比較
+        { 
             pt1ConnectIs = WIRELESS_WIFI;
             VIDEO_SYNC_PWM();
             ESP32slave_SendPT1Connect((uint8_t)pt1ConnectIs);   //LCDへの表示

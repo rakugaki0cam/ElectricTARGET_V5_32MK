@@ -22,7 +22,8 @@
 
 
 //センサーステータス
-typedef enum {
+typedef enum 
+{
     SENSOR_STATUS_OK,       //OK
     SENSOR_STATUS_INVALID,  //データ無効     
     SENSOR_STATUS_ERROR,    //エラー  
@@ -31,7 +32,8 @@ typedef enum {
 
 
 //測定ステータス
-typedef enum {
+typedef enum 
+{
     MEASURE_STATUS_OK,
     MEASURE_STATUS_NOT_ENOUGH,       
     MEASURE_STATUS_ERROR,
@@ -40,7 +42,8 @@ typedef enum {
 
 
 //センサ情報と測定値
-typedef struct {
+typedef struct 
+{
     uint8_t             sensor_num;         //センサ番号
     uint8_t             input_order;        //センサデータ入力順位 0~5
     float               sensor_x_mm;        //センサ座標
@@ -57,7 +60,8 @@ typedef struct {
 
 
 //計算ステータス
-typedef enum {
+typedef enum 
+{
     //
     CALC_STATUS_OK,
     CALC_STATUS_NOT_ENOUGH,     //測定値数不足
@@ -81,7 +85,8 @@ typedef enum {
 
 
 //着弾位置計算結果
-typedef struct {
+typedef struct 
+{
     uint16_t        pattern;            //センサ選択パターン 十進　各桁がセンサ番号
     float           impact_pos_x_mm;    //着弾座標
     float           impact_pos_y_mm;
@@ -95,7 +100,8 @@ extern impact_result_t  calcResult;     //座標の計算の最終結果
 
 
 //グループ毎の分散の計算
-typedef struct {
+typedef struct 
+{
     uint16_t        pattern;            //センサ選択パターン 十進　各桁がセンサ番号
     uint8_t         sample_n;           //平均サンプル数
     float           average_pos_x_mm;

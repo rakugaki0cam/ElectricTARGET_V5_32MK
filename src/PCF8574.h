@@ -10,7 +10,8 @@
 
 
 //Global
-typedef enum {
+typedef enum 
+{
     NO_OUTPUT   = 0,            //‰½‚àƒIƒ“‚µ‚È‚¢
     LED_BLUE    = 0b00000001,   //P0
     LED_YELLOW  = 0b00000010,   //P1
@@ -20,7 +21,7 @@ typedef enum {
     P5          = 0b00100000,
     P6          = 0b01000000,
     P7          = 0b10000000,
-}port_name_t;
+} port_name_t;
 
 
 bool    PCF8574_Init(void);
