@@ -87,7 +87,7 @@ volatile pt1con_sor_t    pt1ConnectIs = UNKNOWN;
 
 
 //local
-const uint8_t fw_ver[] = "0.65";    //firmware version
+const uint8_t fw_ver[] = "0.66";    //firmware version
 bool        pt1Esp_Flag = 0;        //PT1(–³ü)Š„
 bool        pt1_Flag = 0;           //PT1(—Lü)Š„
 bool        timer1secFlag = 0;      //RTCC 1•bŠ„
