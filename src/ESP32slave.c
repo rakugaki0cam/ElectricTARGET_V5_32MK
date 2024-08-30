@@ -24,19 +24,22 @@
 //register address
 typedef enum  {
     REG_ID_CHECK        = 0x01, //ID確認　返答"ESP"
-    REG_TARGET_CLEAR    = 0x20, //ターゲットクリアコマンド
-    REG_TARGET_RESET    = 0x21, //ターゲットリセットコマンド
-    REG_TARGET_DEFAULT  = 0x22, //ターゲットデフォルトセットコマンド
-    REG_TARGET_OFFSET   = 0x23, //ターゲットYオフセットコマンド
-    REG_TARGET_AIMPOINT = 0x24, //ターゲット狙点セットコマンド
-    REG_TARGET_BRIGHT   = 0x25, //ターゲット輝度セットコマンド
-    REG_DATA_IMPACT     = 0x30, //着弾データを送る
-    REG_DATA_PT1CON     = 0x40, //PT1有線、無線が切り替わった時に送る
-    REG_DATA_TEMP       = 0x60, //温度データを送る
-    REG_DATA_BAT        = 0x70, //バッテリーデータを送る
-    REG_DATA_MESSAGE    = 0x80, //テキストデータを送る
-    REG_TARGET_SLEEP    = 0x90, //ターゲットスリープコマンド
+    ID_REPLY            = 0x32,     
+    REG_TARGET_CLEAR    = 0x08, //ターゲットクリアコマンド
+    REG_TARGET_DEFAULT  = 0x09, //ターゲットデフォルトセットコマンド
+    REG_TARGET_OFFSET   = 0x0a, //ターゲットYオフセットコマンド
+    REG_TARGET_AIMPOINT = 0x0b, //ターゲット狙点セットコマンド
+    REG_TARGET_BRIGHT   = 0x0c, //ターゲット輝度セットコマンド
+    REG_TARGET_SLEEP    = 0x0d, //ターゲットスリープコマンド
     DATA_SLEEP_KEY      = 0x99, //スリープのkey
+            
+    REG_DATA_IMPACT     = 0x20, //着弾データを送る
+    REG_DATA_PT1CON     = 0x2c, //PT1有線、無線が切り替わった時に送る
+    REG_DATA_TEMP       = 0x2d, //温度データを送る
+    REG_DATA_BAT        = 0x2f, //バッテリーデータを送る
+            
+    REG_DATA_MESSAGE    = 0x50, //テキストデータを送る
+ 
 } esp_register_t;
 
 
@@ -76,23 +79,6 @@ bool ESP32slave_ClearCommand(void)
     //ESP32へターゲットクリア
     printf("> target clear\n");
     if (i2c1_Write1byteRegister(ESP_SLAVE_ID, REG_TARGET_CLEAR, 0))
-    {
-#ifdef DEBUG_ESP_SLAVE_0
-        printf("ESPslave error!\n");
-#endif
-        return ERROR;
-    }
-    return OK;
-}
-
-
-bool ESP32slave_ResetCommand(void)
-{  
-    //ESP32へターゲットリセット
-    printf("** RESET ESP32 in 3 second **\n");
-    CORETIMER_DelayMs(3000);
-    
-    if (i2c1_Write1byteRegister(ESP_SLAVE_ID, REG_TARGET_RESET, 0))
     {
 #ifdef DEBUG_ESP_SLAVE_0
         printf("ESPslave error!\n");
