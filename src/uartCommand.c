@@ -39,7 +39,8 @@ void uartComandCheck(void)
         return;
     }
     
-    //シリアル(タマモニ、デバッガー)から受信あり
+    //シリアル(デバッガー)から受信あり
+    //タマモニからのシリアルは廃止
     for(i = 0; i < 5; i++)
     {
         buf[i] = 0;
@@ -71,7 +72,7 @@ void uartComandCheck(void)
     }
     
     debuggerComand(buf);
-    tamamoniCommandCheck(buf);
+    //tamamoniCommandCheck(buf);///////////
     
     UART1_ErrorGet();
     //buffer clear
@@ -126,6 +127,7 @@ void debuggerComand(uint8_t* buf)
 }
 
 
+/*
 // Tamamoni TARGET Command ------------------------------------------------------------------------------------------
 void tamamoniCommandCheck(uint8_t* tmp_str) 
 {
@@ -174,6 +176,8 @@ void tamamoniCommandCheck(uint8_t* tmp_str)
     }
 
 }
+*/
+
 
 
 /* *****************************************************************************

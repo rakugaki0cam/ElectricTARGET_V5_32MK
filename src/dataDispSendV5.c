@@ -22,7 +22,7 @@ void serialPrintResult(uint16_t shotCount, uint8_t meaStat, uint8_t mode)
     dataSendToESP32();  //着弾表示を早くする
     
     //CORETIMER_DelayMs(100); //RS485へ送信の前に間を開ける。タマモニからデバッガへprintfしているかもしれないため/////////////////////////
-    dataSendToTAMAMONI();   //LAN
+    //dataSendToTAMAMONI();   //LAN
     
     //CORETIMER_DelayMs(30);  //データ送信の間をつくる/////////////////////////////////////////////////////////////////////////
     switch(mode)
@@ -48,6 +48,7 @@ void serialPrintResult(uint16_t shotCount, uint8_t meaStat, uint8_t mode)
 }
 
 
+/*
 void dataSendToTAMAMONI(void)
 {
     //タマモニへ座標データ他を有線送信
@@ -56,6 +57,7 @@ void dataSendToTAMAMONI(void)
     printf("\n[TARGET#2->]\n");//////////////////
     printf("BINX0Y0dT %8.3f %8.3f %8.4f END ,", calcResult.impact_pos_x_mm, calcResult.impact_pos_y_mm, calcResult.delay_time0_msec);
 }
+*/
 
 
 void dataSendToESP32(void)

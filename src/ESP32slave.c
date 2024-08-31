@@ -89,6 +89,7 @@ bool ESP32slave_ClearCommand(void)
 }
 
 
+/*
 bool ESP32slave_DefaultSetCommand(void)
 {  
     //ESP32へターゲットデフォルトセッティング
@@ -169,6 +170,7 @@ bool ESP32slave_BrightnessCommand(float brightness)
     
     
 }
+*/
 
 
 //**** DATA send **************************************************

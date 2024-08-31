@@ -63,6 +63,7 @@
  * 2024.08.23   v0.65   EXTINT3/PT1入力信号をそのままESP32へも並列に接続。[10P-3]
  * 2024.08.25   v0.66   軟質エンビ板を伝わる時間が符号逆だったよう。
  * 2024.08.30   v0.67   I2C　レジスタアドレス変更
+ * 2024.08.31   v0.68   タマモニ#3仕様変更により有線での着弾データ送信をやめる。タマモニからの有線コマンドも廃止。
  * 
  * 
  */
@@ -88,7 +89,7 @@ volatile pt1con_sor_t    pt1ConnectIs = UNKNOWN;
 
 
 //local
-const uint8_t fw_ver[] = "0.66";    //firmware version
+const uint8_t fw_ver[] = "0.68";    //firmware version
 bool        pt1Esp_Flag = 0;        //PT1(無線)割込
 bool        pt1_Flag = 0;           //PT1(有線)割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
