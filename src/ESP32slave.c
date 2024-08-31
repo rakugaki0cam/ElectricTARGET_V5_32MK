@@ -24,7 +24,7 @@
 //register address
 typedef enum  {
     REG_ID_CHECK        = 0x01, //ID確認　返答"ESP"
-    ID_REPLY            = 0x32,     
+    ID_REPLY            = 0x32, //返答データ    
     REG_TARGET_CLEAR    = 0x08, //ターゲットクリアコマンド
     REG_TARGET_DEFAULT  = 0x09, //ターゲットデフォルトセットコマンド
     REG_TARGET_OFFSET   = 0x0a, //ターゲットYオフセットコマンド
