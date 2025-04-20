@@ -227,7 +227,7 @@ int main ( void )
       
     //video SYNC init
     VIDEO_SYNC_PWM();        //startup - WiFiñ≥ê¸ê⁄ë±
-    videoFps = 30;
+    videoFps = 120;     //30;
     videoSync_Init(videoFps);
     
     printf("--------------------\n");
