@@ -60,6 +60,7 @@
  * 2024.05.05   v0.62   z方向オフセット22mm (本体を突っ張り棒で固定)
  * 2024.05.25   v0.63   充電スリープ時にシンクLEDが点滅してしまうことがあるののフィクス。
  * 2024.08.16   v0.64   EXTINT3/PT1入力信号をPT1_INT出力(フォールエッジ)してESP32へ送る。[10P-3]　--> これに伴い、PT1_DELAY_TESTを廃止
+ * 2026.04.27   v0.65   座標計算がエラーの時、x、yを999にする。（今までは検算のためそのままにしていた）
  * 
  * 
  */
@@ -85,7 +86,7 @@ volatile pt1con_sor_t    pt1ConnectIs = UNKNOWN;
 
 
 //local
-const uint8_t fw_ver[] = "0.64";    //firmware version
+const uint8_t fw_ver[] = "0.65";    //firmware version
 bool        pt1Esp_Flag = 0;        //PT1(無線)割込
 bool        pt1_Flag = 0;           //PT1(有線)割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
