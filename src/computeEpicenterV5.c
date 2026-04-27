@@ -101,9 +101,9 @@ void    clearResult(uint8_t n)
 void    resultError999(uint8_t n, calc_stat_sor_t status)
 {
     //エラーの時、resultにエラー識別数値を書き込む
-    //calcValue[n].impact_pos_x_mm = 999.99;/////////////////////////////////////////検算のためオフ
-    //calcValue[n].impact_pos_y_mm = 999.99;
-    //calcValue[n].radius0_mm = 999.99;
+    calcValue[n].impact_pos_x_mm = 999.99;      //検算のためオフにしていた2026.04.27
+    calcValue[n].impact_pos_y_mm = 999.99;
+    calcValue[n].radius0_mm = 999.99;
     calcValue[n].delay_time0_msec = 0;        //タマモニでのエラー判定に使用
     calcValue[n].status = status;
 }
