@@ -88,22 +88,13 @@
 #define BATV_Get()               ((PORTG >> 6) & 0x1U)
 #define BATV_PIN                  GPIO_PIN_RG6
 
-/*** Macros for PT1 pin ***/
-#define PT1_Get()               ((PORTG >> 7) & 0x1U)
-#define PT1_PIN                  GPIO_PIN_RG7
+/*** Macros for PT1_WIRED pin ***/
+#define PT1_WIRED_Get()               ((PORTG >> 7) & 0x1U)
+#define PT1_WIRED_PIN                  GPIO_PIN_RG7
 
 /*** Macros for PT1_ESP pin ***/
 #define PT1_ESP_Get()               ((PORTG >> 8) & 0x1U)
 #define PT1_ESP_PIN                  GPIO_PIN_RG8
-
-/*** Macros for PT1_INT pin ***/
-#define PT1_INT_Set()               (LATGSET = (1U<<9))
-#define PT1_INT_Clear()             (LATGCLR = (1U<<9))
-#define PT1_INT_Toggle()            (LATGINV= (1U<<9))
-#define PT1_INT_OutputEnable()      (TRISGCLR = (1U<<9))
-#define PT1_INT_InputEnable()       (TRISGSET = (1U<<9))
-#define PT1_INT_Get()               ((PORTG >> 9) & 0x1U)
-#define PT1_INT_PIN                  GPIO_PIN_RG9
 
 /*** Macros for VIDEO_SYNC_IN pin ***/
 #define VIDEO_SYNC_IN_Get()               ((PORTA >> 12) & 0x1U)

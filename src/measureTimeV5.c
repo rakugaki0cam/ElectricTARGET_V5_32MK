@@ -334,16 +334,16 @@ float   delay_comparator_usec(float delay_time)
 
 float   impact_time_msec(float r0_mm)
 {
-    //r0から着弾時刻を推定計算
+    //r0から着弾時刻の音速遅れ分を推定計算
     //着弾時刻は最初のセンサオンより前の時刻
-    //塩ビ板t2の中を伝わる時間(表に玉が当たり、裏面に伝わる時間)
-#define TARGET_PLATE_T_MM   2       //軟質塩ビのマト板の厚さ mm
+    //塩ビ板t2の中を伝わる時間(表に玉が当たり、裏面に伝わる時間)もプラスする
+#define TARGET_PLATE_T_MM   2.0     //軟質塩ビのマト板の厚さ mm
 #define V_PLATE_MPS         2300    //軟質塩ビ板中の音速 m/sec(= mm/msec)
     float   dt_t2_msec;
     
-    dt_t2_msec = TARGET_PLATE_T_MM / V_PLATE_MPS;   //msec
+    dt_t2_msec = (float)TARGET_PLATE_T_MM / V_PLATE_MPS;    //msec
     
-    return  -r0_mm / v_air_mps() + dt_t2_msec;      //msec
+    return  -(r0_mm / v_air_mps() + dt_t2_msec);      //msec
 }
 
 

@@ -39,7 +39,8 @@ void uartComandCheck(void)
         return;
     }
     
-    //シリアル(タマモニ、デバッガー)から受信あり
+    //シリアル(デバッガー)から受信あり
+    //タマモニからのシリアルは廃止
     for(i = 0; i < 5; i++)
     {
         buf[i] = 0;
@@ -71,7 +72,7 @@ void uartComandCheck(void)
     }
     
     debuggerComand(buf);
-    tamamoniCommandCheck(buf);
+    //tamamoniCommandCheck(buf);///////////
     
     UART1_ErrorGet();
     //buffer clear
@@ -126,13 +127,13 @@ void debuggerComand(uint8_t* buf)
 }
 
 
+/*
 // Tamamoni TARGET Command ------------------------------------------------------------------------------------------
 void tamamoniCommandCheck(uint8_t* tmp_str) 
 {
     //タマモニからのコマンドを確認し実行
     char command[10] = { 0 };  //9文字まで
     const char clear[] = "CLEAR";
-    const char reset[] = "RESET";
     const char defaultSet[] = "DEFAULT";
     const char offset[] = "OFFSET";
     const char aimpoint[] = "AIMPOINT";
@@ -153,10 +154,6 @@ void tamamoniCommandCheck(uint8_t* tmp_str)
     if (strcmp(clear, command) == 0) 
     {
         ESP32slave_ClearCommand();
-    }
-    else if (strcmp(reset, command) == 0) 
-    {
-        ESP32slave_ResetCommand();
     }
     else if (strcmp(defaultSet, command) == 0) 
     {
@@ -179,6 +176,8 @@ void tamamoniCommandCheck(uint8_t* tmp_str)
     }
 
 }
+*/
+
 
 
 /* *****************************************************************************

@@ -60,7 +60,14 @@
  * 2024.05.05   v0.62   z方向オフセット22mm (本体を突っ張り棒で固定)
  * 2024.05.25   v0.63   充電スリープ時にシンクLEDが点滅してしまうことがあるののフィクス。
  * 2024.08.16   v0.64   EXTINT3/PT1入力信号をPT1_INT出力(フォールエッジ)してESP32へ送る。[10P-3]　--> これに伴い、PT1_DELAY_TESTを廃止
- * 2026.04.27   v0.65   座標計算がエラーの時、x、yを999にする。（今までは検算のためそのままにしていた）
+ * 2024.08.23   v0.65   EXTINT3/PT1入力信号をそのままESP32へも並列に接続。[10P-3]
+ * 2024.08.25   v0.66   軟質エンビ板を伝わる時間が符号逆だったよう。
+ * 2024.08.30   v0.67   I2C　レジスタアドレス変更
+ * 2024.08.31   v0.68   タマモニ#3仕様変更により有線での着弾データ送信をやめる。タマモニからの有線コマンドも廃止。
+ * 2024.08.31   v0.69   タマモニ有線データ出力をやめたらESPが着弾データを受け取れなくなった。
+ *                      ESPへのI2C送信が終わった後に他のデータが出されてしまうようで、300msディレイを入れたところ良い動作となった。I2Cのデータはすぐにメモリに収納させないといけないよう。
+ * 
+ * 2026.04.27   v0.70   座標計算がエラーの時、x、yを999にする。（今までは検算のためそのままにしていた）
  * 
  * 
  */
@@ -86,7 +93,7 @@ volatile pt1con_sor_t    pt1ConnectIs = UNKNOWN;
 
 
 //local
-const uint8_t fw_ver[] = "0.65";    //firmware version
+const uint8_t fw_ver[] = "0.70";    //firmware version
 bool        pt1Esp_Flag = 0;        //PT1(無線)割込
 bool        pt1_Flag = 0;           //PT1(有線)割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
@@ -111,7 +118,6 @@ void pt1Esp_callback(EXTERNAL_INT_PIN pin, uintptr_t context)
 void pt1Lan_callback(EXTERNAL_INT_PIN pin, uintptr_t context)
 {
     //有線接続有りのときのPT1入力
-    PT1_INT_Clear();    //ESP32へのPT1_INTをオン(ロー)に
     pt1_Flag = 1;
 }
 
@@ -222,7 +228,7 @@ int main ( void )
       
     //video SYNC init
     VIDEO_SYNC_PWM();        //startup - WiFi無線接続
-    videoFps = 30;
+    videoFps = 120;     //30;
     videoSync_Init(videoFps);
     
     printf("--------------------\n");
@@ -243,8 +249,6 @@ int main ( void )
     clearData(); 
     pt1Esp_Flag = 0;
     pt1_Flag = 0;
-    PT1_INT_Set();  //PT1_INTをハイ(idle)に
-
     
 //**** MAIN LOOP ********************************************** 
     while (true)
@@ -265,9 +269,7 @@ int main ( void )
             
         if (pt1_Flag)
         {
-            PT1_INT_Set();  //PT1_INTをハイ(idle)に
-            printf("PT1 ON\n");            
-            //printfの文字列を長くしてもパルス幅は変わらないみたい
+            printf("PT1 ON\n");
             pt1_Flag = 0;
         }
         
@@ -304,7 +306,6 @@ void impact(void)
     
     //着弾
     LED_BLUE_Set();
-    PT1_INT_Set();          //PT1_INTをハイ(idle)にもどす
    
     //測定完了待ち
     cnt = 80;
@@ -421,7 +422,7 @@ void pt1ConnectCheck(void)
 #define WIRED 1     //H:有線 (idle High)
 #define WIRELESS 0  //L:無線 (接続なし)
 
-    if (PT1_Get() == WIRED)
+    if (PT1_WIRED_Get() == WIRED)
     {    
         if (pt1ConnectIs == WIRELESS_WIFI)  //前の状態と比較
         { 
