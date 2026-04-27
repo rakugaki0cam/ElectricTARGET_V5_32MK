@@ -112,7 +112,7 @@ void printMeasCalc(uint16_t shotCount, meas_stat_sor_t measStat)
     calc_stat_sor_t     calc_stat;
     uint8_t             i, n;
     printf("\n\n");
-    printf("> shot%03d ***%5.1f%cC\n", shotCount, air_temp_degree_c, 0xdf);
+    printf("> shot%03d ***%5.1fdegC\n", shotCount, air_temp_degree_c);
     
 #ifndef  SENSOR_DATA_DEBUG_TIMER_VALUE
     //入力順タイマーカウント表示 
@@ -197,7 +197,7 @@ void printMeasCalc(uint16_t shotCount, meas_stat_sor_t measStat)
     calc_stat = calcResult.status;     //平均値の状態
     if (CALC_STATUS_AVERAGE_ERR != calc_stat)
     {
-        printf("----- result　----\n");
+        printf("----- result ----\n");
         printf("%6.1f %6.1f %6.1f\n", calcResult.impact_pos_x_mm, calcResult.impact_pos_y_mm, calcResult.radius0_mm);
     }
     else 
@@ -219,7 +219,7 @@ void printFullDebug(uint16_t shotCount, meas_stat_sor_t measStat)
     float               stdDev = 0;     //標準偏差
     
     printf("\n");
-    printf("--- SHOT #%d --------------------------------------------------------------------------------------------------------------------\n", shotCount);
+    printf("--- SHOT #%d   temp %5.1fdegC ------------------------------------------------------------------------------------------------------------------\n", shotCount, air_temp_degree_c);
     printf("5Sensor Measure results\n");
     for (i = 0; i < NUM_SENSOR; i++)
     {
@@ -254,8 +254,8 @@ void printFullDebug(uint16_t shotCount, meas_stat_sor_t measStat)
     {
         printf("%2d - (calc%04X)  ", (i + 1), vari5Groupe[i].pattern);
         printf("ave[ n=%1d - x:%8.3f  y:%8.3f  r0:%8.3f ]  ", vari5Groupe[i].sample_n, vari5Groupe[i].average_pos_x_mm, vari5Groupe[i].average_pos_y_mm, vari5Groupe[i].average_radius0_mm);
-        printf("dev[ d1:%7.3f  d2:%7.3f  d3:%7.3f  d4:%7.3f ]   ", vari5Groupe[i].dist1_mm2, vari5Groupe[i].dist2_mm2, vari5Groupe[i].dist3_mm2, vari5Groupe[i].dist4_mm2);
-        printf("variance:%8.4f [%d]  err:%2d\n", vari5Groupe[i].variance, (vari5Groupe[i].order + 1), vari5Groupe[i].status);
+        printf("dev[ d1:%7.2f  d2:%7.2f  d3:%7.2f  d4:%7.2f ]   ", vari5Groupe[i].dist1_mm2, vari5Groupe[i].dist2_mm2, vari5Groupe[i].dist3_mm2, vari5Groupe[i].dist4_mm2);
+        printf("variance:%8.3f [%d]  err:%2d\n", vari5Groupe[i].variance, (vari5Groupe[i].order + 1), vari5Groupe[i].status);
         
         if (vari5Groupe[i].order == 0)
         {
@@ -263,8 +263,7 @@ void printFullDebug(uint16_t shotCount, meas_stat_sor_t measStat)
             stdDev = sqrt(vari5Groupe[i].variance);
         }
     }
-    selGroup++;
-    printf("--- Result: [ Group: %1d (exclude sensor%1d): stdev: %6.3fmm ] -------------------------------\n", selGroup, selGroup, stdDev);
+    printf("--- Result: [ Group: %1d (exclude sensor%1d): x:%7.2f  y:%7.2f  r0:%7.2f - stdev: %6.3fmm ] -------------------------------\n", selGroup + 1, selGroup + 1,  vari5Groupe[selGroup].average_pos_x_mm, vari5Groupe[selGroup].average_pos_y_mm, vari5Groupe[selGroup].average_radius0_mm, stdDev);
     printf("\n\n");
 
 }

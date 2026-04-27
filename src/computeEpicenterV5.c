@@ -127,18 +127,18 @@ calc_stat_sor_t computeEpicenter(void)
     float       tmpX;
     float       tmpY;
     float       tmpR;
-    float       dist2[NUM_RES];     //距離の2乗
+    float       dist2[NUM_RES];     //測定距離の2乗
     
     
     //計算結果クリア
     for (i = 0; i < NUM_CAL; i++)
     {
-        clearResult(i);
+        clearResult(i); //x,yとも0
     }
     calcResult.pattern = 0xffff;    //平均値識別マーク
 
     
-    //5つのセンサから3つを選んで計算する　10とおり
+    //5つのセンサから3つを選んで座標を計算する　10とおり
     for (i = 0; i < NUM_CAL; i++)
     {
         calcStat = computeXY(i);    //座標を計算
@@ -230,7 +230,7 @@ calc_stat_sor_t computeEpicenter(void)
 #ifdef  DEBUG_APO_2
                 printf("group%1d.d%1d: dev calc error!\n", (grNum + 1), (i + 1));
 #endif
-                dist2[i] = 99.999;
+                dist2[i] = 999; //99.99
             }
             
         } // for-i loop 
@@ -259,17 +259,21 @@ calc_stat_sor_t computeEpicenter(void)
         cnt = 0;
         for (i = 0; i < NUM_GROUP; i++)
         {
-            if (vari5Groupe[grNum].sample_n < 4)
+            if (vari5Groupe[grNum].sample_n == 0)
             {
-                //サンプル数が少ない時
-                cnt = 8;                ////順位 -> 9の表示が出るように8にする。
+                //サンプル数が0の時
+                cnt = 4;            //順位5
                 continue;
             }
             if (vari5Groupe[grNum].variance > vari5Groupe[i].variance)
             {
                 //自分の値より小さい値があった時カウントする
                 cnt++;
-                //同じ値があった時は同着ができてしまう......未処理////////////////////
+                //同じ値があった時は同着ができてしまう......未処理////////////////////*****************************xxxxxxxxxxxxxxxxxxxxxxxxx
+            }
+            if (vari5Groupe[grNum].variance == vari5Groupe[i].variance)
+            {
+                //同じ値があった時は同着
             }
         }
         vari5Groupe[grNum].order = cnt;
