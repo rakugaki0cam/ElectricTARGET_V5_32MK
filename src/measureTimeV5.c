@@ -124,8 +124,15 @@ uint8_t measureMain(uint16_t shotCnt)
         
         measStat = MEASURE_STATUS_NOT_ENOUGH;
         ledLightOn(LED_ERROR);
-        uint8_t mes[] = "calc err: num of data not enough";  //40文字
-        ESP32slave_SendMessage(mes);
+        //uint8_t mes[] = "calc err: num of data not enough";  //40文字
+        //ESP32slave_SendMessage(mes);
+        
+        //エラー時の数値をセットする
+        calcResult.impact_pos_x_mm  = 999.99;
+        calcResult.impact_pos_y_mm  = 999.99;
+        calcResult.radius0_mm       = 999.99;
+        calcResult.delay_time0_msec = 0;
+        
         return measStat;
     }
 
@@ -137,14 +144,12 @@ uint8_t measureMain(uint16_t shotCnt)
     {       
         //測定OK
         ledLightOn(LED_BLUE);
-        
     }
     else
     {
         //エラーの時
         measStat = MEASURE_STATUS_ERROR;
         ledLightOn(LED_CAUTION);
-
     }
     
     return measStat;

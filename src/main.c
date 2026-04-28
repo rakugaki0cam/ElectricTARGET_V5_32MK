@@ -69,7 +69,7 @@
  * 
  * 2026.04.27   v0.70   座標計算がエラーの時、x、yを999にする。（今までは検算のためそのままにしていた）
  *                      測定値の選別の際、分散が一番小さいグループを選べていなかった。順位づけのところのバグを修正。周辺部の誤差が大きくなるところの座標データ選別ができるようになった。
- * 
+ * 2026.04.28   v0.71   座標エラーのときにx,yともに999.99を出力(measureMain()の途中リターン前にcalcResult.に代入)
  * 
  * 
  */
@@ -95,7 +95,7 @@ volatile pt1con_sor_t    pt1ConnectIs = UNKNOWN;
 
 
 //local
-const uint8_t fw_ver[] = "0.70";    //firmware version
+const uint8_t fw_ver[] = "0.71";    //firmware version
 bool        pt1Esp_Flag = 0;        //PT1(無線)割込
 bool        pt1_Flag = 0;           //PT1(有線)割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
@@ -244,8 +244,8 @@ int main ( void )
     }
     
     //connect message
-    uint8_t mes[] = "ESP32 - PIC32 I2C connect OK";
-    ESP32slave_SendMessage(mes);
+    //uint8_t mes[] = "ESP32 - PIC32 I2C connect OK";
+    //ESP32slave_SendMessage(mes);
     
     measureInit();
     clearData(); 
