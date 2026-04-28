@@ -44,7 +44,7 @@
 //DEBUG
 //calculation error -> LED Yellow   //DEBUG 計算時の軽微なエラーの時黄色LEDを点ける
 //                                  //      致命的なエラーの時はピンクLEDを点ける
-#define DEBUG_LED_no
+#define DEBUG_LED
 #ifdef  DEBUG_LED
     #define LED_CAUTION     LED_YELLOW
     #define LED_ERROR       LED_PINK
