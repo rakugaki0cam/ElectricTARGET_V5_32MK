@@ -28,7 +28,8 @@
 #define SENSOR_VERTICAL_SPACING     87.0        //センサー縦幅      174.0mm
 #define SENSOR_CENTER_SPACING       0.0         //センサー中心高さ    0.0mm
 //z方向　音の発生源は塩ビ板の裏面とする。　塩ビ板t2
-#define SENSOR_DEPTH_OFFSET         22.0  //突っ張り棒で本体を固定　
+#define SENSOR_DEPTH_OFFSET         (15.0 + 1.0)  //3Dプリンタでブラケット製作　マイク表面まで15mm　
+//#define SENSOR_DEPTH_OFFSET         22.0  //突っ張り棒で本体を固定　
 //#define SENSOR_DEPTH_OFFSET         30    //箱入りユニットをダンボールでマウント
 //#define SENSOR_DEPTH_OFFSET         15.5  //マイクをマト板側に設置の時
 
