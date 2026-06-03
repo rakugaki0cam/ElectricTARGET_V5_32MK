@@ -574,7 +574,11 @@ uint8_t apollonius3circleXYR(uint8_t numResult, sensor_data_t* tmp3Sensor)
 #ifdef  DEBUG_APO_2
             printf("CAL%1d: Qst is less than zero! ", (numResult + 1));
 #endif
-            return calc_stat;
+            
+            ////////////////////////////////////////
+            //return calc_stat;
+            q = 0;  //判別式q=0として強制計算。r0は-bb/2aaとなる。///////////////////////-----------------------------------------
+            
         }
 
         //二次方程式を解いてx,y,rを求める計算
@@ -617,7 +621,7 @@ uint8_t apollonius3circleXYR(uint8_t numResult, sensor_data_t* tmp3Sensor)
     }
     else 
     { 
-        //3つのセンサーが一直線ではなく三角形配置の時
+        //3つのセンサーが一直線ではなく三角形配置の時ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
         
         d[1] = (0 - x[1] * x[1] + x[2] * x[2] - y[1] * y[1] + y[2] * y[2] + r[1] * r[1] - r[2] * r[2]) / 2;
         d[2] = (0 - x[2] * x[2] + x[3] * x[3] - y[2] * y[2] + y[3] * y[3] + r[2] * r[2] - r[3] * r[3]) / 2;
@@ -655,7 +659,9 @@ uint8_t apollonius3circleXYR(uint8_t numResult, sensor_data_t* tmp3Sensor)
 #ifdef  DEBUG_APO_2
             printf("CAL%1d: Q is less than zero! ", (numResult + 1));
 #endif
-            return calc_stat;
+            //return calc_stat;
+            q = 0;  //判別式q=0として強制計算。r0は-bb/2aaとなる。///////////////////////--------------------------------------------------
+            
         }
 
         //二次方程式を解いてx,y,rを求める計算
