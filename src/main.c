@@ -70,6 +70,7 @@
  * 2026.04.27   v0.70   座標計算がエラーの時、x、yを999にする。（今までは検算のためそのままにしていた）
  *                      測定値の選別の際、分散が一番小さいグループを選べていなかった。順位づけのところのバグを修正。周辺部の誤差が大きくなるところの座標データ選別ができるようになった。
  * 2026.04.28   v0.71   座標エラーのときにx,yともに999.99を出力(measureMain()の途中リターン前にcalcResult.に代入)
+ * 2026.06.03   v0.72   コンパレータ遅れ補正の計算値が計算順序が後の方になっていて反映されていなかった?
  * 
  * 
  */
@@ -95,7 +96,7 @@ volatile pt1con_sor_t    pt1ConnectIs = UNKNOWN;
 
 
 //local
-const uint8_t fw_ver[] = "0.71";    //firmware version
+const uint8_t fw_ver[] = "0.72";    //firmware version
 bool        pt1Esp_Flag = 0;        //PT1(無線)割込
 bool        pt1_Flag = 0;           //PT1(有線)割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
@@ -206,8 +207,11 @@ int main ( void )
     ESP32slave_Init();  //LCD&WiFi
     PCF8574_Init();     //IOexpander LED
     
+    //init OK ERRORの表示・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
+    
     //comparator DAC
-    uint16_t    compVth = 100;//mV  CDAconverter/////////////////////////////////////////
+    #define     COMPVTH_DEFAULT 100         //mV   CDAconverter
+    uint16_t    compVth = COMPVTH_DEFAULT;
     uint16_t    val_12bit;
     val_12bit = 4096 / 3300 * compVth;
     printf("Vth=%5dmV:%03x(12bit)\n", compVth, val_12bit);
@@ -229,8 +233,11 @@ int main ( void )
     EVIC_ExternalInterruptEnable(EXTERNAL_INT_3);
       
     //video SYNC init
+    #define VIDEO_FPS 120   //video flame rate
+    //#define VIDEO_FPS 60
+    //#define VIDEO_FPS 30
     VIDEO_SYNC_PWM();        //startup - WiFi無線接続
-    videoFps = 120;     //30;
+    videoFps = VIDEO_FPS;
     videoSync_Init(videoFps);
     
     printf("--------------------\n");
@@ -310,10 +317,11 @@ void impact(void)
     LED_BLUE_Set();
    
     //測定完了待ち
-    cnt = 80;
+    #define SENSOR_WAIT_MAX 80  // x 10usec = 800usec  つづいてのセンサー入力信号を待つ時間
+    cnt = SENSOR_WAIT_MAX;
     while(cnt > 0)
     {
-        CORETIMER_DelayUs(10);      //つづいてのセンサー入力信号を待つ時間 10us x 80 = 800usec
+        CORETIMER_DelayUs(10);
         cnt--;
         if (sensorCnt >= NUM_SENSOR)
         {
@@ -326,7 +334,7 @@ void impact(void)
     ICAP2_Disable();
     ICAP3_Disable();
     ICAP4_Disable();
-    ICAP5_Disable();        //入力がなかった時もあるはずなので止める
+    ICAP5_Disable();        //入力がない場合もあるはずなので止める
     TMR2_Stop();
     videoSync_Stop();       //PWM stop
     impact_PT4_Off();       //着弾センサ出力オフ->ESP経由WiFiでタマモニへいく信号

@@ -45,7 +45,7 @@ typedef enum
 typedef struct 
 {
     uint8_t             sensor_num;         //センサ番号
-    uint8_t             input_order;        //センサデータ入力順位 0~5
+    uint8_t             input_order;        //センサデータ入力順位 0~4・・・・・・・・・・・・・・・・
     float               sensor_x_mm;        //センサ座標
     float               sensor_y_mm;
     float               sensor_z_mm;

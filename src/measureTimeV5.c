@@ -18,7 +18,7 @@
 #include "measureTimeV5.h"
 
 //DEBUG
-#define COMP_DELAY_TIME_OFF //計算の検算中はコンパレータディレイタイムの合算は無し
+#define COMP_DELAY_TIME_OFF_no //計算の検算中はコンパレータディレイタイムの合算は無し
 //DEBUG (global)
 //#define DEBUG_MEAS_no       //デバッグprintf表示(エラー系)   
 
@@ -247,10 +247,11 @@ uint8_t assignMeasureData(void)
         if (SENSOR_STATUS_OK == sensor5Measure[SensNum].status)
         {
             //ステータスOKのときだけ計算、代入
-            sensor5Measure[SensNum].delay_cnt       = sensor5Measure[SensNum].timer_cnt - sensor5Measure[firstSensor].timer_cnt;                         //カウント差
-            sensor5Measure[SensNum].delay_time_usec = delay_time_usec(sensor5Measure[SensNum].delay_cnt);                                               //カウント値→時間
-            sensor5Measure[SensNum].distance_mm     = dist_delay_mm(sensor5Measure[SensNum].delay_time_usec - sensor5Measure[SensNum].comp_delay_usec); //時間→距離
-            sensor5Measure[SensNum].comp_delay_usec = delay_comparator_usec(sensor5Measure[SensNum].delay_time_usec);                                   //コンパレータ応答遅れ簡易計算        
+            sensor5Measure[SensNum].delay_cnt       = sensor5Measure[SensNum].timer_cnt - sensor5Measure[firstSensor].timer_cnt;            //カウント差
+            sensor5Measure[SensNum].delay_time_usec = delay_time_usec(sensor5Measure[SensNum].delay_cnt);                                   //カウント値→時間
+            sensor5Measure[SensNum].comp_delay_usec = delay_comparator_usec(sensor5Measure[SensNum].delay_time_usec);                       //コンパレータ応答遅れ時間推定計算   
+            sensor5Measure[SensNum].d_time_corr_usec = sensor5Measure[SensNum].delay_time_usec - sensor5Measure[SensNum].comp_delay_usec;   //補正後時間
+            sensor5Measure[SensNum].distance_mm     = dist_delay_mm(sensor5Measure[SensNum].d_time_corr_usec);                              //時間→距離
         }
     }
 
@@ -270,11 +271,11 @@ void clearData(void)
     for (i = 0; i < NUM_SENSOR; i++)
     {
         sensor5Measure[i].input_order = 0xff;      //未入力判定用に0ではなくて0xff
-        sensor5Measure[i].timer_cnt = 0xffffffff;  //タイム順を見る時のために最大の値にしておく
+        sensor5Measure[i].timer_cnt = 0xffffffff;  //タイム順を決める時のために初期値を最大値(最下位順位にするため)にしておく
         sensor5Measure[i].delay_cnt = 0;
         sensor5Measure[i].delay_time_usec = 0;
         sensor5Measure[i].comp_delay_usec = 0;
-        sensor5Measure[i].d_time_corr_usec = 0;
+        sensor5Measure[i].d_time_corr_usec = 0;///////////////////
         sensor5Measure[i].distance_mm = 0;
         sensor5Measure[i].status = 0;
     }

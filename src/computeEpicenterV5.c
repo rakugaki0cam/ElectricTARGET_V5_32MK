@@ -27,8 +27,8 @@
 #include "computeEpicenterV5.h"
 
 //DEBUG (global)
-//#define DEBUG_APO_no        //座標検算時のデバッグprintf表示(検算用)
-//#define DEBUG_APO2_no       //座標検算時のデバッグprintf表示(エラー系)
+#define DEBUG_APO_no       //座標検算時のデバッグprintf表示(検算用)
+#define DEBUG_APO_2_no     //座標検算時のデバッグprintf表示(エラー系)
 
 
 //GLOBAL
@@ -117,7 +117,8 @@ calc_stat_sor_t computeEpicenter(void)
     //出力　result[]:計算結果座標x,y,r  グローバル
     //return value calc_stat_sor_tによる
     
-#define     DEV_XY      3.0     //偏差 判定値　xy
+//#define     DEV_XY      3.0     //偏差 判定値　xy
+#define     DEV_XY      20.0     //偏差 判定値　xy
 #define     NUM_RES     4       //1グループ中の偏差計算値の数
     
     calc_stat_sor_t  calcStat = CALC_STATUS_OK;
@@ -214,7 +215,7 @@ calc_stat_sor_t computeEpicenter(void)
                 tmpY = calcValue[calcNum].impact_pos_y_mm - vari5Groupe[grNum].average_pos_y_mm;
                 dist2[i] = tmpX * tmpX + tmpY * tmpY;   //距離(偏差)の2乗
 
-                if (dist2[i] > (DEV_XY * DEV_XY))
+                if (dist2[i] > (DEV_XY * DEV_XY))//////////////////////////・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
                 {      //ばらつきが範囲を超えている
                     calcStat = CALC_STATUS_DEV_OVER;
                     ledLightOn(LED_CAUTION);
