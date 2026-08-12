@@ -237,7 +237,7 @@ bool    i2c1_WriteRegister(uint8_t i2cId, uint8_t portReg)
 
 
 //レジスタ書き込みなし
-bool    i2ci_ReadRegister(uint8_t i2cId, uint8_t* rxData)
+bool    i2c1_ReadRegister(uint8_t i2cId, uint8_t* rxData)
 {
     //レジスタ書き込みなし
     //port Read

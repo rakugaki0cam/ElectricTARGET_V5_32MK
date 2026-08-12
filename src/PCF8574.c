@@ -7,6 +7,7 @@
  * 
  * Revision history: 
  * 2024.01.14   
+ * 2026.08.11 inputを追加
  * 
  * 
  */
@@ -18,7 +19,7 @@
 
 //レジスタは1つだけなので、アドレスは無い
 
-#define     IO_SETTING      0b00000000  //入力ポート:1を書込(100uAのプルアップが有効になる)
+#define     IO_SETTING      0b11100000  //入力ポート:1を書込(100uAのプルアップが有効になる)
 
 //local
 static  uint8_t portRegister = IO_SETTING;
@@ -38,6 +39,7 @@ bool    PCF8574_Init(void)
         printf("error!\n");
         return ERROR;
     }
+    ledLightOff((port_name_t)(LED_BLUE | LED_YELLOW | LED_PINK)); //LED消灯
     printf("OK\n");
     
     return OK;
@@ -49,15 +51,14 @@ void    ledLightOn(port_name_t color)
 {
     //LEDをオン
     //複数一度にやりたい時はorで並べる
-    uint8_t tmp;
     if (NO_OUTPUT == color)
     {
         //何もオンしない時
         return;
     }
     
-    tmp = portRegister | color;
-    i2c1_WriteRegister(PCF8574_ID, tmp);
+    portRegister = portRegister | color;
+    i2c1_WriteRegister(PCF8574_ID, portRegister);
     
 }
 
@@ -65,19 +66,43 @@ void    ledLightOn(port_name_t color)
 void    ledLightOff(port_name_t color)
 {
     //LEDをオフ
-    uint8_t tmp;
     if (NO_OUTPUT == color)
     {
         //何もオフしない時
         return;
     }
     
-    tmp = portRegister & (!color);
-    i2c1_WriteRegister(PCF8574_ID, tmp);
+    portRegister = portRegister & (~color); //~ビット反転
+    i2c1_WriteRegister(PCF8574_ID, portRegister);
     
 }
 
 
-//****** sub ************************************************
+//input
+uint8_t     exIoRead(void)
+{   //レジスタを読み取り
+    uint8_t d = 0xff;
+    static uint8_t _d = 0;
+    i2c1_ReadRegister(PCF8574_ID, &d);
+    printf("portReg:%02x  new read:%02x\n", portRegister, d);
+
+    if (d != _d)
+    {
+      printf("read - 0x%02x\n", d);
+      _d = d;
+
+    }
+    return d;
+}
+
+
+bool switchStatus(uint8_t currentRegister, port_name_t swName)
+{ //スイッチ入力の検出
+  //スイッチはプルアップ接続。スイッチオンでデータはLになる
+  //戻り値はスイッチオンでH、オフでL。
+  return !(currentRegister & swName);  
+}
+
+
 
 

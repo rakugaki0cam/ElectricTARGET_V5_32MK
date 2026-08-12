@@ -29,7 +29,7 @@ bool    i2c1_ReadDataBlock(uint8_t, uint8_t, uint8_t*, uint8_t);
 //PCF8574
 //レジスタは一つのみなのでレジスタアドレスがない
 bool    i2c1_WriteRegister(uint8_t, uint8_t);
-bool    i2ci_ReadRegister(uint8_t, uint8_t*);
+bool    i2c1_ReadRegister(uint8_t, uint8_t*);
 
 //ESP32slave
 bool    i2c1_ESP32ReadDataBlock(uint8_t, uint8_t, uint8_t*, uint8_t);
