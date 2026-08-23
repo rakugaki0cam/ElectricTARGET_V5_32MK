@@ -11,19 +11,13 @@
  * 
  * 
  */
-#include "header.h"
 #include "PCF8574.h"
 
 
 #define     PCF8574_ID      0x20        //0x20~0x27
-
 //レジスタは1つだけなので、アドレスは無い
 
 #define     IO_SETTING      0b11100000  //入力ポート:1を書込(100uAのプルアップが有効になる)
-
-//local
-static  uint8_t portRegister = IO_SETTING;
-
 
 
 bool    PCF8574_Init(void)
@@ -39,7 +33,7 @@ bool    PCF8574_Init(void)
         printf("error!\n");
         return ERROR;
     }
-    ledLightOff((port_name_t)(LED_BLUE | LED_YELLOW | LED_PINK)); //LED消灯
+    ledLightOn(LED_BLUE | LED_YELLOW | LED_PINK); //LED全灯
     printf("OK\n");
     
     return OK;
@@ -47,62 +41,126 @@ bool    PCF8574_Init(void)
     
 
 //
-void    ledLightOn(port_name_t color)
+void    ledLightOn(uint8_t color)
 {
     //LEDをオン
     //複数一度にやりたい時はorで並べる
+    uint8_t err;
+            
     if (NO_OUTPUT == color)
     {
         //何もオンしない時
         return;
     }
-    
-    portRegister = portRegister | color;
-    i2c1_WriteRegister(PCF8574_ID, portRegister);
-    
+    uint8_t currentRegister = 0;
+    err = i2c1_ReadRegister(PCF8574_ID, &currentRegister);
+    if (err)
+    {
+      printf("I2C read error(%d)!\n", err);
+      return;
+    }
+    uint8_t tmpRegister = (currentRegister | color) | IO_SETTING;
+    err = i2c1_WriteRegister(PCF8574_ID, tmpRegister);
+    if (err)
+    {
+      printf("I2C write error(%d)!\n", err);
+    }
 }
 
 
-void    ledLightOff(port_name_t color)
+void    ledLightOff(uint8_t color)
 {
     //LEDをオフ
+    uint8_t err;
+    
     if (NO_OUTPUT == color)
     {
         //何もオフしない時
         return;
     }
-    
-    portRegister = portRegister & (~color); //~ビット反転
-    i2c1_WriteRegister(PCF8574_ID, portRegister);
-    
+    uint8_t currentRegister = 0;
+    err = i2c1_ReadRegister(PCF8574_ID, &currentRegister);
+    if (err)
+    {
+      printf("I2C read error(%d)!\n", err);
+      return;
+    }
+    uint8_t tmpRegister = (currentRegister | (uint8_t)(~color)) | IO_SETTING;   //~ビット反転 ~演算時32ビットに拡張されるとまずい場合があるので、キャストする
+    err = i2c1_WriteRegister(PCF8574_ID, tmpRegister);
+    if (err)
+    {
+      printf("I2C write error(%d)!\n", err);
+    }
 }
 
 
 //input
-uint8_t     exIoRead(void)
+uint8_t readInputRejister(void)
 {   //レジスタを読み取り
     uint8_t d = 0xff;
-    static uint8_t _d = 0;
-    i2c1_ReadRegister(PCF8574_ID, &d);
-    printf("portReg:%02x  new read:%02x\n", portRegister, d);
+    static uint8_t lastSwState = IO_SETTING; 
 
-    if (d != _d)
+    uint8_t err = i2c1_ReadRegister(PCF8574_ID, &d);
+    if (err)
     {
-      printf("read - 0x%02x\n", d);
-      _d = d;
+        printf("I2C read error(%d)!\n", err);
+        return lastSwState; //前回値を返す
+    }
 
+    uint8_t currentSwState = d & IO_SETTING;//入力ピンだけを抜き出し
+    if (currentSwState != lastSwState)
+    { // スイッチの状態が変わったときだけ、改行されて綺麗にログが出る
+        printf("SW changed - 0x%02x (Raw:0x%02x)\n", currentSwState, d);
+        lastSwState = currentSwState;
     }
     return d;
 }
 
 
-bool switchStatus(uint8_t currentRegister, port_name_t swName)
-{ //スイッチ入力の検出
-  //スイッチはプルアップ接続。スイッチオンでデータはLになる
-  //戻り値はスイッチオンでH、オフでL。
-  return !(currentRegister & swName);  
+bool switchStatus(uint8_t currentRegister,uint8_t swName)
+{   //スイッチ入力の検出
+    //スイッチはプルアップ接続。スイッチオンでデータはLになる
+    //戻り値はスイッチオンでH、オフでL。
+    return !(currentRegister & swName);  
 }
 
 
+//---- TEST --------------------------
+void ioExpanderTest(void)
+{ //SW1,2,3でLED青、黄、ピンク点灯
+    printf("SW1....LED BLUE ON\n");
+    printf("SW2....LED YELLOW ON\n");
+    printf("SW3....LED PINK ON\n");
+
+    while(1)
+    {
+        uint8_t reg = readInputRejister();
+        if (switchStatus(reg, SW1))
+        {
+            ledLightOn(LED_BLUE);
+        }
+        else
+        {
+            ledLightOff(LED_BLUE);
+        }
+        if (switchStatus(reg, SW2))
+        {
+            ledLightOn(LED_YELLOW);
+        }
+        else
+        {
+            ledLightOff(LED_YELLOW);
+        }
+        if (switchStatus(reg, SW3))
+        {
+            ledLightOn(LED_PINK);
+        }
+        else
+        {
+            ledLightOff(LED_PINK);
+        }
+        CORETIMER_DelayMs(100);
+    }
+}
 
 

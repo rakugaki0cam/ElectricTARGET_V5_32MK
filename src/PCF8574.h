@@ -4,9 +4,9 @@
  * 2024.01.14
  * 
  */
+#pragma once
 
-#ifndef PCF8574_H
-#define	PCF8574_H
+#include "header.h"
 
 
 //Global
@@ -26,10 +26,10 @@ typedef enum
 
 bool    PCF8574_Init(void);
 //output
-void    ledLightOn(port_name_t);
-void    ledLightOff(port_name_t);
+void    ledLightOn(uint8_t);
+void    ledLightOff(uint8_t);
 //input
-uint8_t exIoRead(void);
-bool    switchStatus(uint8_t currentRegister, port_name_t swName);
-
-#endif //PCF8574_H
+uint8_t readInputRejister(void);
+bool    switchStatus(uint8_t currentRegister, uint8_t swName);
+//TEST
+void    ioExpanderTest(void);

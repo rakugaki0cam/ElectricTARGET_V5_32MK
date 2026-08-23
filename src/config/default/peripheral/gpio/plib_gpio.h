@@ -108,6 +108,15 @@
 #define U1TXDE_Get()               ((PORTE >> 1) & 0x1U)
 #define U1TXDE_PIN                  GPIO_PIN_RE1
 
+/*** Macros for IP5306_I2C_EN pin ***/
+#define IP5306_I2C_EN_Set()               (LATBSET = (1U<<10))
+#define IP5306_I2C_EN_Clear()             (LATBCLR = (1U<<10))
+#define IP5306_I2C_EN_Toggle()            (LATBINV= (1U<<10))
+#define IP5306_I2C_EN_OutputEnable()      (TRISBCLR = (1U<<10))
+#define IP5306_I2C_EN_InputEnable()       (TRISBSET = (1U<<10))
+#define IP5306_I2C_EN_Get()               ((PORTB >> 10) & 0x1U)
+#define IP5306_I2C_EN_PIN                  GPIO_PIN_RB10
+
 /*** Macros for ANALOG_POWER pin ***/
 #define ANALOG_POWER_Set()               (LATBSET = (1U<<11))
 #define ANALOG_POWER_Clear()             (LATBCLR = (1U<<11))

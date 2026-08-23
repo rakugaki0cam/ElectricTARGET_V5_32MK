@@ -66,15 +66,16 @@ bool ip5306_Init(void)
     uint8_t boostLongPush = 0b1;    //[bit7]ブーストオフ     0:ダブル, 1:長押し     ----*
     uint8_t leddoubleclick = 0b1;   //[bit6]LEDライト       0:長押し, 1:ダブル押し ----* 
     uint8_t shortPushOff = 0b0;     //[bit5]短押しオフ       0:しない, 1:する
-    uint8_t usbCutBoost = 0b0;      //[bit2]USB抜時ブースト出力 1:オン, 0:オフ　 (注.瞬停してしまう)
+    uint8_t usbCutBoost = 0b0;      //[bit2]USB抜時ブースト出力 1:オン, 0:オフ　 (注.瞬停してしまうので1:にしてもマイコンは落ちる)///////////
     uint8_t lowVoltage = 0b1;       //[bit0]3V以下オフ       1:する　0:そのまま 
-    //REG_SYS_CTL2                  //default 0x64 -> 0x74
-    uint8_t longPushTime = 0b1;     //[bit4]長押し時間 　　　　0:2sec, 1:3sec      ----*
+    //REG_SYS_CTL2                  //default 0x64 -> 0x64
+    uint8_t longPushTime = 0b0;     //[bit4]長押し時間 　　　　0:2sec, 1:3sec
     uint8_t autoOffTime = 0b01;     //[bit3:2]オートオフ時間  01:32sec, 00:8s, 10:16s, 11:64s
    
 
     //デフォルト値の読み出し
     printf("iP5306 init ");
+    IP5306_I2C_EN_Set();    //I2CレベルコンバーターをEnableしてバスに接続する。
     if (i2c1_ReadDataBlock(IP5306_SLAVE_ID, REG_SYS_CTL0, ip5306RxData, 3))
     {
         printf("error!\n");

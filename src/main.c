@@ -71,6 +71,8 @@
  *                      測定値の選別の際、分散が一番小さいグループを選べていなかった。順位づけのところのバグを修正。周辺部の誤差が大きくなるところの座標データ選別ができるようになった。
  * 2026.04.28   v0.71   座標エラーのときにx,yともに999.99を出力(measureMain()の途中リターン前にcalcResult.に代入)
  * 2026.06.03   v0.72   コンパレータ遅れ補正の計算値が計算順序が後の方になっていて反映されていなかった?
+ * 2026.08.18   v0.80   iP5306起動時のプルアップ確保するためI2Cレベルコンバータをオフする。FXMA2102 OEピン　H:Enable, L:Disable
+ * 2026.08.23   v0.81   PCF8574 IOエキスパンダをマルチマスタ対応に。
  * 
  * 
  * 
@@ -81,7 +83,7 @@
  * 
  */
 
-#include <xc.h> ///////////
+//#include <xc.h> ///////////
 #include "header.h"
 
 
@@ -102,7 +104,7 @@ volatile pt1con_sor_t    pt1ConnectIs = UNKNOWN;
 
 
 //local
-const uint8_t fw_ver[] = "0.72";    //firmware version
+const uint8_t fw_ver[] = "0.81";    //firmware version
 bool        pt1Esp_Flag = 0;        //PT1(無線)割込
 bool        pt1_Flag = 0;           //PT1(有線)割込
 bool        timer1secFlag = 0;      //RTCC 1秒割込
@@ -148,6 +150,8 @@ int main ( void )
     SYS_Initialize ( NULL );
     
     //power on
+    IP5306_I2C_EN_Clear();  //iP5306 I2C Disable 起動時I2Cバスから切り離すことでプルアップを確実にしてI2Cモードでの起動を絶対にする。
+                            //ESP32S3のI2C SDAに割り当てたGPIO43ピンは起動時にシステムログを出力する。(起動後150msecまでは危険)
     ESP_POWER_Set();        //ESP32 5V LoadSwitch
     ANALOG_POWER_Set();     //Analog 3.3V LDO
     
