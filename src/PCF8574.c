@@ -85,7 +85,7 @@ void    ledLightOff(uint8_t color)
       printf("I2C read error(%d)!\n", err);
       return;
     }
-    uint8_t tmpRegister = (currentRegister | (uint8_t)(~color)) | IO_SETTING;   //~ビット反転 ~演算時32ビットに拡張されるとまずい場合があるので、キャストする
+    uint8_t tmpRegister = (currentRegister & (uint8_t)(~color)) | IO_SETTING;   //~ビット反転 ~演算時32ビットに拡張されるとまずい場合があるので、キャストする
     err = i2c1_WriteRegister(PCF8574_ID, tmpRegister);
     if (err)
     {
