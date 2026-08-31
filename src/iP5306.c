@@ -361,7 +361,8 @@ void espSleep(void)
     //
     ledLightOff(LED_BLUE | LED_YELLOW | LED_PINK);  //正面LED消灯
     printf("\n---ESP32 SLEEP-----\n");  //充電完了待ち状態へ節電
-    ESP32slave_SleepCommand();          //ESP32スリープ　(電源を切るとI2Cバスに影響が出るため)
+    //ESP32slave_SleepCommand();          //ESP32スリープ　(電源を切るとI2Cバスに影響が出るため)
+    ESP_POWER_Clear();                      //ESP32 5V LoadSwitchオフ／／／／／／／／／／／／／／／2026.08.31
     ANALOG_POWER_Clear();               //Analog 3.3V LDOオフ
     printf("wait to FullCharge \n");
     printf("\n");
@@ -375,6 +376,7 @@ void deepSleep(void)
     LED_BLUE_Clear();
     printf("RTCC Interrupt off\n");
     RTCC_InterruptDisable(RTCC_INT_ALARM);  //RTCC 割り込み停止
+    i2c1_Write1byteRegister(IP5306_SLAVE_ID, REG_SYS_CTL0, 0x35);//低負荷自動オフで電源オフへ
     printf("ESP32 off\n");
     ESP_POWER_Clear();                      //ESP32 5V LoadSwitchオフ
     printf("---DEEP SLEEP-----\n");
