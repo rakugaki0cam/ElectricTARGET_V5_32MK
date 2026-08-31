@@ -57,10 +57,10 @@ bool ip5306_Init(void)
     uint8_t ip5306RxData[3];
     
     //REG_SYS_CTL0                  //default 0x35 -> 0x31
-    uint8_t boost = 0b1;            //[bit5]ブースト出力     1:する, 0:しない 
+    uint8_t boost = 0b1;            //[bit5]ブースト出力     1:する, 0:しない   0にするとUSB給電した時だけオン
     uint8_t charge = 0b1;           //[bit4]充電機能        1:有効, 0:無効,
     uint8_t autoOn = 0b0;           //[bit2]オートオン      1:する, 0:しない       ----*
-    uint8_t alwaysBoost = 0b0;      //[bit1]常時ブースト     0:しない, 1:オン
+    uint8_t alwaysBoost = 0b0;      //[bit1]常時ブースト     0:しない, 1:オンーーー低負荷オフでは？？？？
     uint8_t pushSwOff = 0b1;        //[bit0]プッシュSWオフ   1:可, 0:不可
     //REG_SYS_CTL1                  //default 0x1D -> 0xD9
     uint8_t boostLongPush = 0b1;    //[bit7]ブーストオフ     0:ダブル, 1:長押し     ----*
